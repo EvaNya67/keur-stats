@@ -1,12 +1,1 @@
-{
- "riotId": "EvaNya#001",
- "slug": "evanya",
- "puuid": "q6kYththbtZBbhnDpezCfT9PH7Y4F_eS3gS6tttsSKcziyA6Md5rtHlbswbmh4ixK8cwK56jcutQ6A",
- "updatedAt": "2026-10-21T09:42:48.914Z",
- "ddragon": "16.21.1",
- "solo": null,
- "flex": null,
- "history": [],
- "champions": [],
- "matches": []
-}
+{"v":2,"riotId":"EvaNya#001","slug":"evanya","puuid":"q6kYththbtZBbhnDpezCfT9PH7Y4F_eS3gS6tttsSKcziyA6Md5rtHlbswbmh4ixK8cwK56jcutQ6A","region":"EUW","updatedAt":"2026-10-21T10:06:57.997Z","ddragon":"16.21.1","solo":null,"flex":null,"history":[],"pending":0,"games":[],"skipped":[]}
