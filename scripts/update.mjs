@@ -17,7 +17,7 @@ const KEY = process.env.RIOT_API_KEY;
 const RIOT_BASE = process.env.RIOT_BASE; // seulement pour les tests locaux
 const DDRAGON = process.env.DDRAGON_BASE || "https://ddragon.leagueoflegends.com";
 const SCHEMA = 2;
-const REQUEST_BUDGET = Number(process.env.MAX_REQ ?? 170); // requêtes par joueur et par exécution (~3,5 min)
+const REQUEST_BUDGET = Number(process.env.MAX_REQ ?? 300); // requêtes par joueur et par exécution (~6 min, sous la limite de 100 / 2 min)
 const MAX_GAMES = 300; // parties gardées par joueur (les plus récentes)
 const MAX_HISTORY = 200;
 
@@ -228,7 +228,53 @@ function extractTimeline(tl, m, puuid, S) {
     }
     if (ev.victimId) deathsAt[ev.victimId] = t;
   }
-  return { deaths, kills };
+  return { deaths, kills, lane: laneStats(frames, parts, me) };
+}
+
+// ---------- Phase de lane : lui contre son adversaire direct ----------
+function laneStats(frames, parts, me) {
+  const opp = me.teamPosition ? parts.find((x) => x.teamId !== me.teamId && x.teamPosition === me.teamPosition) : null;
+  if (!opp) return null;
+  const snap = (min) => {
+    const f = frames[Math.min(min, frames.length - 1)]?.participantFrames;
+    if (!f || frames.length - 1 < min) return null;
+    const a = f[me.participantId], b = f[opp.participantId];
+    if (!a || !b) return null;
+    const cs = (x) => (x.minionsKilled || 0) + (x.jungleMinionsKilled || 0);
+    return { g: a.totalGold, og: b.totalGold, cs: cs(a), ocs: cs(b), xp: a.xp, oxp: b.xp, lvl: a.level, olvl: b.level };
+  };
+  const L = { at10: snap(10), at15: snap(15), ek: 0, ed: 0, ea: 0, dOpp: 0, kOpp: 0, solo: 0, soloDeaths: 0, fb: 0, plates: 0, oplates: 0, wards: 0, ganked: 0 };
+  // partenaire de lane du bas (support <-> ADC) : comparaison à 10 min
+  const duoPos = me.teamPosition === "UTILITY" ? "BOTTOM" : me.teamPosition === "BOTTOM" ? "UTILITY" : null;
+  if (duoPos) {
+    const mate = parts.find((x) => x.teamId === me.teamId && x.teamPosition === duoPos);
+    const foe = parts.find((x) => x.teamId !== me.teamId && x.teamPosition === duoPos);
+    const f = frames[Math.min(10, frames.length - 1)]?.participantFrames;
+    if (mate && foe && f && frames.length > 10) L.duo10 = { g: f[mate.participantId]?.totalGold, og: f[foe.participantId]?.totalGold };
+  }
+  const LIM = 14 * 60000;
+  for (const fr of frames) for (const ev of fr.events || []) {
+    if (ev.timestamp > LIM) continue;
+    if (ev.type === "CHAMPION_KILL") {
+      const ass = ev.assistingParticipantIds || [];
+      if (ev.killerId === me.participantId) { L.ek++; if (ev.victimId === opp.participantId) { L.kOpp++; if (!ass.length) L.solo++; } }
+      if (ev.victimId === me.participantId) {
+        L.ed++;
+        if (ev.killerId === opp.participantId || ass.includes(opp.participantId)) L.dOpp++;
+        if (ev.killerId === opp.participantId && !ass.length) L.soloDeaths++;
+        const helpers = [ev.killerId, ...ass].filter((id) => id !== opp.participantId && parts.find((p) => p.participantId === id)?.teamId !== me.teamId);
+        if (helpers.length) L.ganked++;
+      }
+      if (ass.includes(me.participantId)) L.ea++;
+    }
+    if (ev.type === "TURRET_PLATE_DESTROYED") { if (ev.killerId === me.participantId) L.plates++; else if (ev.killerId === opp.participantId) L.oplates++; }
+    if (ev.type === "WARD_PLACED" && ev.creatorId === me.participantId) L.wards++;
+  }
+  // premier sang : +1 s'il le fait, -1 s'il le donne
+  const first = frames.flatMap((fr) => fr.events || []).find((ev) => ev.type === "CHAMPION_KILL");
+  if (first) L.fb = first.killerId === me.participantId ? 1 : first.victimId === me.participantId ? -1 : 0;
+  if (frames.length - 1 < 10) return null; // partie trop courte
+  return L;
 }
 
 // ---------- Un joueur ----------
@@ -263,7 +309,7 @@ async function updatePlayer(p, S) {
   const known = new Set([...games.map((g) => g.matchId), ...skipped]);
   const unknown = keepIds.filter((id) => !known.has(id));
   // Anciennes parties de la Faille sans timeline : à compléter (les plus récentes d'abord)
-  const upgrade = games.filter((g) => g.mode === "Faille" && !g.deaths).sort((x, y) => y.date.localeCompare(x.date));
+  const upgrade = games.filter((g) => g.mode === "Faille" && !g.noTimeline && (!g.deaths || !("lane" in g))).sort((x, y) => y.date.localeCompare(x.date));
   let budget = REQUEST_BUDGET; // requêtes par joueur et par exécution
   let added = 0, upgraded = 0, left = 0;
   const fetchGame = async (id) => {
