@@ -271,6 +271,24 @@ footer.legal{font-size:11px;color:var(--muted);line-height:1.5;max-width:1120px;
 .cbtns{display:flex;flex-wrap:wrap;gap:6px}
 .rpb.dmb{background:color-mix(in srgb,var(--win) 14%,transparent);color:var(--win);border-color:var(--win)}
 .rpb.dmb:hover{background:var(--win);color:var(--bg)}
+
+/* Valorant v2 */
+.vtot{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+#vModes .chip[aria-pressed="true"]{border-color:#FF4655;background:color-mix(in srgb,#FF4655 14%,transparent)}
+.acard.on{border-color:#FF4655}
+.acard .card-wr b{font-size:22px}
+.vmap tr[data-vmap]{cursor:pointer}.vmap tr[data-vmap]:hover td,.vmap tr.sel td{background:color-mix(in srgb,#FF4655 10%,transparent)}
+.tablewrap2{overflow-x:auto}
+.wlist{display:grid;gap:10px}
+.wrow{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13.5px}
+.wrow small{display:block;color:var(--muted);font-size:11px}
+.wrow .num{font-size:12px;color:var(--muted);white-space:nowrap}
+.rstrip{display:flex;flex-wrap:wrap;gap:4px}
+.rstrip span{position:relative;min-width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font:600 11px var(--num);color:#fff}
+.rstrip .w{background:#1d7b55}.rstrip .l{background:#8b2c35}
+.rstrip i{position:absolute;top:-6px;right:-5px;font:700 9px var(--body);font-style:normal;background:#f2c94c;color:#000;border-radius:4px;padding:0 3px}
+.vsb tr.me td{color:#f2c94c}.vsb tr.fr td:first-child{color:#9fd3ff}
+.vsb thead+tbody tr:first-child td{border-top:0}
 </style>
 </head>
 <body>
@@ -331,18 +349,19 @@ footer.legal{font-size:11px;color:var(--muted);line-height:1.5;max-width:1120px;
 
 <div class="wrap" id="valoView" hidden>
   <header class="top">
-    <div><div class="label">Valorant · EUW</div><h1>I HATE HIM<span class="tag" style="color:#FF4655">#KEUR</span></h1></div>
-    <div class="status"><span class="pill"><i></i><span>Profil op.gg privé</span></span></div>
+    <div><div class="label" id="vSub">Valorant · EUW</div><h1>I HATE HIM<span class="tag" style="color:#FF4655">#KEUR</span></h1></div>
+    <div class="status"><a class="btn" href="https://tracker.gg/valorant/profile/riot/I%20HATE%20HIM%23KEUR/overview" target="_blank" rel="noopener" style="border-color:#FF4655;color:#FF4655;text-decoration:none">Voir sur tracker.gg</a></div>
   </header>
-  <div class="vnote"><b>Stats limitées pour l'instant</b>
-    <span>Les replays Valorant ne contiennent pas le tableau des scores : on connaît les cartes, les agents et le déroulé des manches, mais pas ses kills, son ACS, ni qui a gagné. Pour avoir ses vraies stats (rang, RR, K/D, ACS, % de headshots, victoires), il faut rendre son profil public :</span>
-    <ol><li>Aller sur op.gg/valorant</li><li>Cliquer sur « Se connecter » puis « Riot Sign On »</li><li>Se connecter avec son compte Riot : le profil devient public.</li></ol></div>
-  <div class="totals" id="vTotals"></div>
-  <section class="sec"><div class="sec-head"><div><h2>Ce qu'on remarque</h2><div class="sub">Tiré de ses replays.</div></div></div><div class="bilan" id="vObs"></div></section>
-  <section class="sec"><div class="sec-head"><div><h2>Ses rôles</h2></div></div><div class="roles" id="vRoles"></div></section>
-  <section class="sec"><div class="sec-head"><div><h2>Ses agents</h2><div class="sub">Clique sur un agent pour filtrer ses parties.</div></div></div><div class="agrid" id="vAgents"></div></section>
-  <section class="sec"><div class="sec-head"><div><h2 id="vMTitle">Ses parties</h2><div class="sub">Pointillés = ses potes, en rouge = lui. Le score indique le nombre de manches, pas le vainqueur.</div></div></div><div class="rgames" id="vMatches"></div></section>
-  <div class="sub">Données tirées des fichiers replay Valorant (.vrf) envoyés, pas de mise à jour automatique.</div>
+  <div id="vBody" style="display:contents">
+  <section class="sec"><div class="chips" id="vModes" role="group" aria-label="Mode de jeu"></div><div class="totals vtot" id="vTotals"></div></section>
+  <section class="sec"><div class="sec-head"><div><h2>Son bilan Valorant</h2><div class="sub">Calculé sur toutes ses parties de ce mode.</div></div></div><div class="bilan" id="vBilan"></div><div class="totals vtot" id="vMore"></div></section>
+  <section class="sec" id="vDeathMap"></section>
+  <section class="sec"><div class="sec-head"><div><h2>Ses agents</h2><div class="sub">Clique sur un agent pour voir ses parties avec.</div></div></div><div class="agrid" id="vAgents"></div></section>
+  <section class="sec"><div class="sec-head"><div><h2>Ses cartes</h2><div class="sub">Clique sur une carte pour voir ses parties dessus.</div></div></div><div class="tablewrap2" id="vMaps"></div></section>
+  <section class="sec"><div class="two"><div class="box"><h5>Ses armes</h5><div id="vWeapons" class="wlist"></div></div><div class="box"><h5>Ses rôles</h5><div class="roles" id="vRoles" style="border:0;padding:0;background:none"></div></div></div></section>
+  <section class="sec"><div class="sec-head"><div><h2 id="vMTitle">Ses parties</h2><div class="sub">Ouvre une partie pour voir le tableau des scores, les rounds et ses morts sur la carte.</div></div><div id="vFilt"></div></div><div class="rgames" id="vMatches"></div></section>
+  <div class="sub" id="vFoot"></div>
+  </div>
 </div>
 <footer class="legal">KEUR Stats Tracker isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</footer>
 <div class="ov" id="ov" hidden>
@@ -996,67 +1015,229 @@ function champDeathMap(name){
   })();
 })();
 </script>
-<script>
-(function(){
+<script>(function(){
+  /* ---------- Valorant : données tracker.gg (instantané) ---------- */
   const $=id=>document.getElementById(id);
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  let VM=[], fAgent=null;
+  const fr=(x,d=1)=>x==null||isNaN(x)?"–":(+x).toFixed(d).replace(".",",");
+  const pc=x=>x==null?"–":Math.round(x)+"%";
+  const RED="#FF4655";
+  const MODES=[["swiftplay","Vélocité (Swiftplay)","Swiftplay"],["unrated","Non classé","Normal"],["competitive","Compétition","Competitive"],["team-deathmatch","Team Deathmatch","Team Deathmatch"],["deathmatch","Deathmatch","Deathmatch"],["spikerush","Spike Rush","Spike Rush"]];
+  const ROLE={Duelist:"Duelliste",Controller:"Contrôleur",Sentinel:"Sentinelle",Initiator:"Initiateur"};
+  const RES={victory:"Victoire",defeat:"Défaite",draw:"Égalité"};
+  const HOW={Elimination:"élimination",Detonate:"spike explosé",Defuse:"spike désamorcé",Time:"temps écoulé",Surrendered:"abandon"};
+  let D=null, mode="swiftplay", fMap=null, fAgent=null, vCur=null;
+  const hrs=s=>s>=3600?`${Math.round(s/3600)} h`:`${Math.round(s/60)} min`;
+  const ago=iso=>{const d=Math.round((Date.now()-new Date(iso))/86400000);return d<1?"aujourd'hui":d===1?"hier":d<30?`il y a ${d} j`:new Date(iso).toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})};
+
+  /* ---------- verdict par agent ---------- */
+  function verdict(a,avg){
+    const n=a.matchesPlayed, wr=a.matchesWinPct/100;
+    if(n<3)return "test";
+    if(n>=4&&wr>=0.58&&a.kDRatio>=avg.kd*0.9)return "top";
+    if(wr<0.42||a.kDRatio<avg.kd*0.8)return "work";
+    return "ok";
+  }
+  const VL={top:"Maîtrisé",ok:"Correct",work:"À travailler",test:"Peu joué"};
+
+  /* ---------- bilan global ---------- */
+  function bilan(P,agents,maps,weapons,roles){
+    const good=[],bad=[];
+    const hs=P.headshotsPercentage, kd=P.kDRatio, kast=P.kAST;
+    if(hs>=22)good.push({t:"Une très bonne visée",d:`${fr(hs)} % de tirs à la tête, au-dessus de la moyenne des joueurs (environ 18 %).`});
+    else if(hs<17)bad.push({t:"Viser plus haut",d:`Seulement ${fr(hs)} % de tirs à la tête (la moyenne tourne autour de 18 %). Garde ton viseur à hauteur de tête quand tu te déplaces, et tire en rafales courtes au fusil.`});
+    if(P.firstDeaths>P.firstBloods*1.15&&P.firstDeaths>=10)bad.push({t:"Il meurt souvent en premier",d:`${P.firstDeaths} fois mort en premier dans le round, pour ${P.firstBloods} premiers kills. Laisser un coéquipier entrer avant lui ou utiliser une compétence avant de jeter un œil éviterait beaucoup de rounds à 4 contre 5.`});
+    else if(P.firstBloods>P.firstDeaths*1.15&&P.firstBloods>=10)good.push({t:"Il ouvre bien les rounds",d:`${P.firstBloods} premiers kills pour ${P.firstDeaths} premières morts.`});
+    const cl=(P.clutches||0)+(P.clutchesLost||0);
+    if(cl>=10){const r=P.clutches/cl;if(r>=0.15)good.push({t:"Solide en fin de round",d:`${P.clutches} clutchs gagnés sur ${cl} tentés (${pc(r*100)}).`});else bad.push({t:"Les clutchs lui échappent",d:`${P.clutches} clutchs gagnés sur ${cl} (${pc(r*100)}). Quand il reste seul, joue le temps et le spike plutôt que de chercher les duels.`})}
+    if(kast>=72)good.push({t:"Utile presque à chaque round",d:`KAST de ${pc(kast)} : il fait un kill, une assistance, survit ou est échangé dans la plupart des rounds.`});
+    else if(kast<64)bad.push({t:"Trop de rounds sans impact",d:`KAST de ${pc(kast)} : dans un round sur trois, il meurt sans kill, sans assistance et sans être échangé. Jouer plus près de ses coéquipiers aide à être échangé.`});
+    if(P.damageDeltaPerRound<=-10)bad.push({t:"Il prend plus de dégâts qu'il n'en fait",d:`${fr(P.damageDeltaPerRound,0)} dégâts par round d'écart en sa défaveur. Ne reste pas à découvert après un duel : recule, soigne-toi ou change d'angle.`});
+    else if(P.damageDeltaPerRound>=10)good.push({t:"Il gagne ses duels",d:`+${fr(P.damageDeltaPerRound,0)} dégâts par round d'écart en sa faveur.`});
+    if(P.attackKDRatio&&P.defenseKDRatio){const a=P.attackKDRatio,d=P.defenseKDRatio;
+      if(a<d*0.85)bad.push({t:"Moins à l'aise en attaque",d:`K/D de ${fr(a,2)} en attaque contre ${fr(d,2)} en défense. En attaque, entre sur le site avec l'équipe et utilise tes compétences avant d'avancer.`});
+      else if(d<a*0.85)bad.push({t:"Moins à l'aise en défense",d:`K/D de ${fr(d,2)} en défense contre ${fr(a,2)} en attaque. En défense, ne cherche pas les duels tôt : tiens un angle et attends que l'ennemi vienne.`});}
+    const ags=(agents||[]).filter(a=>a.matchesPlayed>=5).sort((x,y)=>y.matchesWinPct-x.matchesWinPct);
+    if(ags[0]&&ags[0].matchesWinPct>=55)good.push({t:`Son meilleur agent : ${ags[0].name}`,d:`${pc(ags[0].matchesWinPct)} de victoires sur ${ags[0].matchesPlayed} parties, K/D ${fr(ags[0].kDRatio,2)}.`});
+    const worstA=ags.at(-1); if(worstA&&worstA!==ags[0]&&worstA.matchesWinPct<=40)bad.push({t:`${worstA.name} lui réussit moins`,d:`${pc(worstA.matchesWinPct)} de victoires sur ${worstA.matchesPlayed} parties, K/D ${fr(worstA.kDRatio,2)}.`});
+    const mp=(maps||[]).filter(m=>m.matchesPlayed>=5).sort((x,y)=>y.matchesWinPct-x.matchesWinPct);
+    if(mp[0]&&mp[0].matchesWinPct>=60)good.push({t:`Fort sur ${mp[0].name}`,d:`${pc(mp[0].matchesWinPct)} de victoires sur ${mp[0].matchesPlayed} parties.`});
+    const wm=mp.at(-1); if(wm&&wm!==mp[0]&&wm.matchesWinPct<=40)bad.push({t:`Difficile sur ${wm.name}`,d:`${pc(wm.matchesWinPct)} de victoires sur ${wm.matchesPlayed} parties. Regarder une vidéo des positions de base sur cette carte aiderait.`});
+    const rl=(roles||[]).filter(r=>r.matchesPlayed>=8).map(r=>({...r,wr:r.matchesWon/r.matchesPlayed})).sort((a,b)=>b.wr-a.wr);
+    if(rl.length>=2&&rl[0].wr-rl.at(-1).wr>=0.12)good.push({t:`Il gagne plus en ${(ROLE[rl[0].role]||rl[0].role).toLowerCase()}`,d:`${pc(rl[0].wr*100)} de victoires en ${(ROLE[rl[0].role]||rl[0].role).toLowerCase()}, contre ${pc(rl.at(-1).wr*100)} en ${(ROLE[rl.at(-1).role]||rl.at(-1).role).toLowerCase()}.`});
+    const op=(weapons||[]).find(w=>w.name==="Operator");
+    if(op&&op.kills>=20&&op.kills>=op.deaths*1.5)good.push({t:"Efficace à l'Operator",d:`${op.kills} kills à l'Operator.`});
+    return {good:good.slice(0,5),bad:bad.slice(0,5)};
+  }
+
+  /* ---------- carte d'une mort ---------- */
+  const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+  function adviseV(d){
+    const P=d.at||[.5,.5], pls=d.pl||[];
+    const allies=pls.filter(p=>p[1]===1).map(p=>({n:p[0],pote:p[4],xy:[p[2],p[3]]})), enemies=pls.filter(p=>p[1]===0).map(p=>({n:p[0],xy:[p[2],p[3]]}));
+    const nearA=allies.filter(a=>dist(a.xy,P)<0.1), nearE=enemies.filter(e=>dist(e.xy,P)<0.13);
+    const closest=allies.slice().sort((a,b)=>dist(a.xy,P)-dist(b.xy,P))[0];
+    const why=[],todo=[];let title=null;
+    const sniper=/operator|outlaw|marshal/i.test(d.wpn||"");
+    if(d.first&&!d.traded){title="Première mort du round, sans échange";why.push(`Mort à ${d.t}s, avant tout autre kill du round : son équipe joue à 4 contre 5.`);todo.push("Ne prends pas le premier duel seul : avance juste derrière un coéquipier, ou utilise une compétence (flash, fumigène, drone) avant de jeter un œil.")}
+    if(nearE.length>=2&&nearE.length>nearA.length+1){title=title||`Seul contre ${nearE.length}`;why.push(`${nearE.length} ennemis autour de lui, ${nearA.length} allié${nearA.length>1?"s":""} assez près.`);todo.push("Quand tu entends plusieurs ennemis, recule et attends ton équipe au lieu de tenir l'angle seul.")}
+    if(!d.traded&&closest&&dist(closest.xy,P)>0.14){title=title||"Trop loin de son équipe";why.push(`Personne n'a pu l'échanger : ${closest.pote||closest.n} était le plus proche, mais trop loin.`);todo.push(`Reste à portée d'échange : à quelques mètres d'un coéquipier, pour qu'il puisse tuer ton tueur juste après.`)}
+    if(sniper){title=title||`Tué à l'${d.wpn}`;todo.push("Ne repasse pas deux fois par le même angle qu'un sniper : change de chemin, ou traverse derrière un fumigène.")}
+    if(d.side==="attacker"&&d.planted){title=title||"Mort après la pose du spike";todo.push("Après la pose, éloigne-toi du spike et cache-toi : c'est à l'ennemi de venir le désamorcer, sous tes tirs.")}
+    if(d.side==="defender"&&d.t<=20&&!d.traded){title=title||"Mort tôt en défense";todo.push("En défense, ne sors pas chercher les duels en début de round : tiens ton angle et laisse l'attaque venir à toi.")}
+    if(d.traded){why.push("Sa mort a été échangée : un coéquipier a tué son tueur dans les 5 secondes. C'est un bon échange.")}
+    if(!title){title=d.traded?"Mort échangée":`Tué par ${d.by||"un ennemi"}`;if(!todo.length)todo.push(d.traded?"Rien de grave : en restant près de ton équipe, ta mort a servi à quelque chose.":"Après un kill ou un duel, change de position au lieu de rester au même endroit.")}
+    why.unshift(`Round ${d.r}, ${d.side==="attacker"?"en attaque":d.side==="defender"?"en défense":""}, ${d.t}s : tué par ${[d.by,...(d.as||[])].filter(Boolean).join(" + ")}${d.wpn?` (${d.wpn})`:""}.`);
+    let target=null,label=null;
+    if(!d.traded&&closest&&dist(closest.xy,P)>0.08){target=closest.xy;label=`Reste près de ${closest.pote||closest.n}`}
+    return {title,why:why.slice(0,4),todo:[...new Set(todo)].slice(0,3),target,label};
+  }
+  let uid=0;
+  const ini=s=>esc(String(s||"?").slice(0,2).toUpperCase());
+  function vDeathSVG(d,img,adv){
+    const id="v"+(++uid), P=(d.at||[.5,.5]).map(v=>v*1000);
+    const pts=[P,...(d.byp?[d.byp.map(v=>v*1000)]:[])]; if(adv.target)pts.push(adv.target.map(v=>v*1000));
+    const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+    const W=Math.min(1000,Math.max(380,Math.max(...xs)-Math.min(...xs)+220,Math.max(...ys)-Math.min(...ys)+220));
+    const cx=Math.max(W/2,Math.min(1000-W/2,(Math.max(...xs)+Math.min(...xs))/2)), cy=Math.max(W/2,Math.min(1000-W/2,(Math.max(...ys)+Math.min(...ys))/2));
+    const dot=(x,y,r,fill,stroke,txt,ttl)=>`<g><title>${esc(ttl)}</title><circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${r*0.28}"/><text x="${x}" y="${y+r*0.36}" text-anchor="middle" font-size="${r*0.95}" font-weight="700" fill="#fff">${txt}</text></g>`;
+    let s=`<svg class="dmap" viewBox="${cx-W/2} ${cy-W/2} ${W} ${W}" role="img" aria-label="${esc(adv.title)}"><defs>
+      <marker id="${id}r" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${RED}"/></marker>
+      <marker id="${id}g" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3fe0a0"/></marker></defs>
+      <rect x="-10" y="-10" width="1020" height="1020" fill="#12161f"/>${img?`<image href="${esc(img)}" x="0" y="0" width="1000" height="1000" opacity=".85"/>`:""}`;
+    const r=W/24;
+    for(const p of d.pl||[]){const x=p[2]*1000,y=p[3]*1000;if(Math.abs(x-cx)>W/2+40||Math.abs(y-cy)>W/2+40)continue;
+      if(p[1]===0&&d.byp&&Math.abs(p[2]-d.byp[0])<1e-3&&Math.abs(p[3]-d.byp[1])<1e-3)continue;
+      s+=dot(x,y,r*0.8,p[1]?"#2b6cb0":"#7a2633",p[1]?"#63b3ff":RED,ini(p[0]),`${p[0]}${p[4]?` (${p[4]})`:""} – ${p[1]?"allié":"ennemi"}`);
+      if(p[4])s+=`<text x="${x}" y="${y-r*1.2}" text-anchor="middle" font-size="${r*0.8}" font-weight="700" fill="#9fd3ff" paint-order="stroke" stroke="#000" stroke-width="${r*0.25}">${esc(p[4])}</text>`}
+    if(d.byp){const k=d.byp.map(v=>v*1000);
+      s+=`<line x1="${k[0]}" y1="${k[1]}" x2="${P[0]+(k[0]-P[0])*0.22}" y2="${P[1]+(k[1]-P[1])*0.22}" stroke="${RED}" stroke-width="${r*0.32}" stroke-linecap="round" marker-end="url(#${id}r)"/>`;
+      s+=dot(k[0],k[1],r,"#7a2633",RED,ini(d.by),`${d.by} (tueur)${d.wpn?` · ${d.wpn}`:""}`)}
+    if(adv.target){const t=adv.target.map(v=>v*1000);
+      s+=`<line x1="${P[0]}" y1="${P[1]}" x2="${t[0]}" y2="${t[1]}" stroke="#3fe0a0" stroke-width="${r*0.3}" stroke-dasharray="${r*0.8} ${r*0.5}" stroke-linecap="round" marker-end="url(#${id}g)"/>`;
+      const lw=adv.label.length*r*0.55+r, lx=Math.max(cx-W/2+lw/2+5,Math.min(cx+W/2-lw/2-5,t[0])), ly=Math.min(cy+W/2-r*1.9,t[1]+r*1.1);
+      s+=`<g class="vlbl"><rect x="${lx-lw/2}" y="${ly}" width="${lw}" height="${r*1.6}" rx="${r*0.8}" fill="#0b1a14" stroke="#3fe0a0" stroke-width="${r*0.15}"/><text x="${lx}" y="${ly+r*1.08}" text-anchor="middle" font-size="${r*0.9}" font-weight="700" fill="#3fe0a0">${esc(adv.label)}</text></g>`}
+    s+=dot(P[0],P[1],r*1.15,"#3a2f10","#f2c94c",ini(d.me||"LUI"),"Lui");
+    s+=`<g><circle cx="${P[0]+r}" cy="${P[1]-r}" r="${r*0.5}" fill="${RED}" stroke="#000" stroke-width="${r*0.12}"/><path d="M${P[0]+r*0.75} ${P[1]-r*1.25}l${r*0.5} ${r*0.5}M${P[0]+r*1.25} ${P[1]-r*1.25}l${-r*0.5} ${r*0.5}" stroke="#fff" stroke-width="${r*0.17}" stroke-linecap="round"/></g>`;
+    return s+"</svg>";
+  }
+  function deathsBlockV(det,meAgent){
+    if(!det||!det.deaths||!det.deaths.length)return det?`<p class="rnote good">Aucune mort dans cette partie.</p>`:"";
+    return `<div class="deaths"><div class="rnote">Ses ${det.deaths.length} morts sur la carte · positions exactes au moment du kill (tracker.gg)</div><div class="dgrid">${det.deaths.map(d=>{const a=adviseV(d);d.me=meAgent;return `<figure class="dcard">${vDeathSVG(d,det.img,a)}<figcaption><b>${esc(a.title)}</b><ul class="rl">${a.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>${a.todo.length?`<div class="dtodo"><span>Il aurait fallu</span>${a.todo.map(t=>`<p>${esc(t)}</p>`).join("")}</div>`:""}</figcaption></figure>`}).join("")}</div></div>`;
+  }
+  function scoreboard(det){
+    const me=det.players.find(p=>p.me), mine=det.players.filter(p=>p.tm===me.tm).sort((a,b)=>b.acs-a.acs), opp=det.players.filter(p=>p.tm!==me.tm).sort((a,b)=>b.acs-a.acs);
+    const row=p=>`<tr class="${p.me?"me":p.pote?"fr":""}"><td>${esc(p.ag)}${p.me?" <b>(lui)</b>":p.pote?` <span class="rnote">${esc(p.pote)}</span>`:""}</td><td>${p.acs}</td><td>${p.k} / ${p.d} / ${p.a}</td><td>${p.hs??"–"}%</td><td>${p.fk??0}/${p.fd??0}</td></tr>`;
+    return `<table class="vs vsb"><thead><tr><th>Son équipe</th><th>ACS</th><th>K / D / A</th><th>HS</th><th>1er kill/mort</th></tr></thead><tbody>${mine.map(row).join("")}</tbody>
+      <thead><tr><th>En face</th><th></th><th></th><th></th><th></th></tr></thead><tbody>${opp.map(row).join("")}</tbody></table>`;
+  }
+  function roundsStrip(det){
+    return `<div class="rstrip">${det.rounds.map((r,i)=>`<span class="${r.w?"w":"l"}" title="Round ${i+1} : ${r.w?"gagné":"perdu"} (${HOW[r.how]||r.how||""})${r.plant?` · spike posé en ${r.plant}`:""}">${i+1}${r.plant?`<i>${r.plant}</i>`:""}</span>`).join("")}</div>`;
+  }
+
+  /* ---------- rendu ---------- */
+  function render(){
+    const P=D.playlists[mode]; if(!P){$("valoView").querySelector("#vBody").innerHTML=`<div class="empty">Pas de données pour ce mode.</div>`;return}
+    const agents=(D.agents[mode]||[]).slice().sort((a,b)=>b.matchesPlayed-a.matchesPlayed||b.matchesWinPct-a.matchesWinPct);
+    const maps=(D.maps[mode]||[]).slice().sort((a,b)=>b.matchesPlayed-a.matchesPlayed);
+    const weapons=(D.weapons[mode]||[]).slice().sort((a,b)=>b.kills-a.kills);
+    const roles=D.roles[mode]||[];
+    const label=MODES.find(m=>m[0]===mode)[2];
+    const ms=D.matches.filter(m=>m.mode===label);
+    const avg={kd:P.kDRatio};
+    $("vModes").innerHTML=MODES.filter(m=>D.playlists[m[0]]).map(m=>`<button class="chip" type="button" data-vm="${m[0]}" aria-pressed="${mode===m[0]}">${esc(m[1])}<span class="c">${D.playlists[m[0]].matchesPlayed}</span></button>`).join("");
+    const roundBased=!["team-deathmatch","deathmatch"].includes(mode);
+    $("vTotals").innerHTML=[[P.matchesPlayed,"parties"],[pc(P.matchesWinPct),"victoires",P.matchesWinPct>=52?"good":P.matchesWinPct<46?"bad":""],[fr(P.kDRatio,2),"K/D",P.kDRatio>=1?"good":P.kDRatio<0.85?"bad":""],
+      ...(roundBased?[[fr(P.scorePerRound,0),"ACS"],[fr(P.damagePerRound,0),"dégâts / round"],[fr(P.headshotsPercentage)+" %","tirs à la tête",P.headshotsPercentage>=22?"good":P.headshotsPercentage<17?"bad":""],[pc(P.kAST),"KAST"]]:[[P.kills,"kills"],[fr(P.headshotsPercentage)+" %","tirs à la tête"]]),
+      [hrs(P.timePlayed||0),"de jeu"]].map(x=>`<div><b class="${x[2]||""}">${x[0]}</b><span>${x[1]}</span></div>`).join("");
+    const B=roundBased?bilan(P,agents,maps,weapons,roles):{good:[],bad:[]};
+    const li=a=>`<ul>${a.map(x=>`<li><b>${esc(x.t)}</b><span>${esc(x.d)}</span></li>`).join("")}</ul>`;
+    $("vBilan").innerHTML=roundBased?`<div class="bcol"><h3>Points forts</h3>${B.good.length?li(B.good):"<p>Rien qui ressorte pour l'instant.</p>"}</div><div class="bcol w"><h3>À travailler</h3>${B.bad.length?li(B.bad):"<p>Rien d'alarmant.</p>"}</div>`:`<p class="sub">Pas de bilan détaillé pour ce mode (pas de rounds).</p>`;
+    // détails chiffrés
+    $("vMore").innerHTML=roundBased?[[P.firstBloods,"premiers kills"],[P.firstDeaths,"premières morts"],[`${P.clutches||0} / ${(P.clutches||0)+(P.clutchesLost||0)}`,"clutchs gagnés"],[`${P.kills3K||0} / ${P.kills4K||0} / ${P.kills5K||0}`,"3k / 4k / ace"],[fr(P.attackKDRatio,2),"K/D en attaque"],[fr(P.defenseKDRatio,2),"K/D en défense"],[pc(P.attackRoundsWinPct),"rounds gagnés en attaque"],[pc(P.defenseRoundsWinPct),"rounds gagnés en défense"],[P.mostKillsInMatch,"record de kills"],[P.plants??0,"spikes posés"],[P.defuses??0,"spikes désamorcés"],[P.traded??0,"morts échangées"]].map(x=>`<div><b>${x[0]??"–"}</b><span>${x[1]}</span></div>`).join(""):"";
+    // agents
+    $("vAgents").innerHTML=agents.map(a=>{const v=verdict(a,avg);return `<button class="acard${fAgent===a.name?" on":""}" type="button" data-va="${esc(a.name)}" aria-pressed="${fAgent===a.name}">
+      <span class="an">${esc(a.name)}</span><span class="ar">${esc(ROLE[a.role]||a.role||"")} · <span class="vchip v-${v}">${VL[v]}</span></span>
+      <span class="card-wr"><b class="${a.matchesWinPct>=55?"good":a.matchesWinPct<45?"bad":""}">${pc(a.matchesWinPct)}</b><span>${a.matchesWon}V ${a.matchesPlayed-a.matchesWon}D</span></span>
+      <span class="card-meta"><span><b>${a.matchesPlayed}</b>parties</span><span><b>${fr(a.kDRatio,2)}</b>K/D</span><span><b>${roundBased?fr(a.scorePerRound,0):fr(a.headshotsPercentage,0)+"%"}</b>${roundBased?"ACS":"HS"}</span></span></button>`}).join("")||`<div class="empty">Aucun agent.</div>`;
+    // cartes
+    $("vMaps").innerHTML=maps.length?`<table class="vs vmap"><thead><tr><th>Carte</th><th>Parties</th><th>Victoires</th><th>K/D</th>${roundBased?"<th>ACS</th><th>Attaque</th><th>Défense</th>":""}</tr></thead><tbody>${maps.map(m=>`<tr data-vmap="${esc(m.name)}" class="${fMap===m.name?"sel":""}"><td>${esc(m.name)}</td><td>${m.matchesPlayed}</td><td class="${m.matchesWinPct>=55?"good":m.matchesWinPct<45?"bad":""}">${pc(m.matchesWinPct)}</td><td>${fr(m.kDRatio,2)}</td>${roundBased?`<td>${fr(m.scorePerRound,0)}</td><td>${pc(m.attackRoundsWinPct)}</td><td>${pc(m.defenseRoundsWinPct)}</td>`:""}</tr>`).join("")}</tbody></table>`:"";
+    // armes
+    $("vWeapons").innerHTML=weapons.slice(0,10).map(w=>`<div class="wrow"><span><b>${esc(w.name)}</b><small>${esc(w.cat||"")}</small></span><span class="track"><i style="width:${Math.min(100,w.kills/(weapons[0]?.kills||1)*100)}%;background:${RED}"></i></span><span class="num">${w.kills} kills · ${fr(w.headshotsPercentage,0)} % tête</span></div>`).join("");
+    // rôles
+    $("vRoles").innerHTML=roles.map(r=>`<div class="vbar"><span>${esc(ROLE[r.role]||r.role)}</span><span class="track"><i style="width:${r.matchesPlayed/Math.max(1,...roles.map(x=>x.matchesPlayed))*100}%"></i></span><span>${r.matchesPlayed} · ${pc(r.matchesWon/Math.max(1,r.matchesPlayed)*100)}</span></div>`).join("");
+    // carte de toutes ses morts
+    renderDeathAgg(label);
+    // parties
+    const list=ms.filter(m=>(!fMap||m.map===fMap)&&(!fAgent||m.agent===fAgent));
+    const shown=list.slice(0,40);
+    $("vMTitle").textContent=`Ses parties${fAgent?` en ${fAgent}`:""}${fMap?` sur ${fMap}`:""} (${list.length})`;
+    $("vFilt").innerHTML=(fAgent||fMap)?`<button class="chip" type="button" data-vclear aria-pressed="true">Retirer le filtre ✕</button>`:"";
+    $("vMatches").innerHTML=shown.map((m,i)=>{const det=(D.details||[]).find(x=>x.id===m.id);const win=m.res==="victory";
+      return `<details class="rg ${win?"w":""}"${i===0?" open":""} data-vid="${esc(m.id)}"><summary>
+        <span class="res ${win?"good":"bad"}">${RES[m.res]||m.res}</span>
+        <span class="kd">${esc(m.map)} · ${esc(m.agent)} · ${m.k} / ${m.d} / ${m.a}${roundBased&&m.rw!=null?` <span class="rnote">${m.rw}–${m.rl}</span>`:""}</span>
+        <span class="meta">${esc(ago(m.t))} · ${roundBased?`ACS ${fr(m.acs,0)} · ${fr(m.adr,0)} dégâts/round · ${fr(m.hs,0)} % tête · KAST ${pc(m.kast)}`:`${m.k} kills`}${m.pl?` · ${m.pl}${m.pl===1?"er":"e"} du match`:""}${det?" · 🗺 carte des morts":""}</span>
+      </summary><div class="rg-body"><div class="vslot">${i===0?matchBody(m,det,roundBased):""}</div></div></details>`}).join("")+(list.length>shown.length?`<p class="rnote">Les ${shown.length} plus récentes sur ${list.length}. Filtre par agent ou par carte pour voir les autres.</p>`:"")||`<div class="empty">Aucune partie.</div>`;
+    $("vFoot").textContent=`Données tracker.gg relevées le ${new Date(D.fetchedAt).toLocaleString("fr-FR",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})} : ${D.matches.length} parties, dont ${(D.details||[]).length} avec le détail des rounds et des morts. Ces stats Valorant ne se mettent pas à jour toutes seules : demande à Claude de les rafraîchir.`;
+  }
+  function matchBody(m,det,roundBased){
+    const tiles=roundBased?`<div class="rtiles">
+      <div><b>${fr(m.acs,0)}</b><span>ACS</span></div><div><b>${fr(m.adr,0)}</b><span>dégâts / round</span></div><div><b>${fr(m.hs,0)} %</b><span>tirs à la tête</span></div><div><b>${pc(m.kast)}</b><span>KAST</span></div>
+      <div><b>${m.fb??0} / ${m.fd??0}</b><span>1er kill / 1re mort</span></div><div><b class="${(m.dd||0)>=0?"good":"bad"}">${(m.dd||0)>=0?"+":""}${fr(m.dd,0)}</b><span>écart de dégâts / round</span></div><div><b>${m.pt??0} / ${m.df??0}</b><span>spikes posés / désamorcés</span></div><div><b>${Math.round((m.sec||0)/60)} min</b><span>durée</span></div></div>`:"";
+    const tags=(m.tags||[]).length?`<div class="ichips">${m.tags.map(t=>`<span class="ichip">${esc(t)}</span>`).join("")}</div>`:"";
+    if(!det)return tiles+tags+(roundBased?`<p class="rnote">Détail des rounds et carte des morts disponibles pour les 40 parties les plus récentes.</p>`:"");
+    return tiles+tags+roundsStrip(det)+scoreboard(det)+deathsBlockV(det,m.agent);
+  }
+  function renderDeathAgg(label){
+    const dets=(D.details||[]).filter(d=>d.mode===label&&d.deaths&&d.deaths.length);
+    const el=$("vDeathMap"); if(!dets.length){el.innerHTML="";return}
+    const byMap={};for(const d of dets)(byMap[d.map]??={img:d.img,deaths:[],kills:[],n:0}),byMap[d.map].deaths.push(...d.deaths),byMap[d.map].kills.push(...(d.kills||[])),byMap[d.map].n++;
+    const names=Object.keys(byMap).sort((a,b)=>byMap[b].deaths.length-byMap[a].deaths.length);
+    const cur=names.includes(vCur)?vCur:names[0]; vCur=cur; const M=byMap[cur];
+    const first=M.deaths.filter(x=>x.first).length, traded=M.deaths.filter(x=>x.traded).length, snip=M.deaths.filter(x=>/operator|outlaw|marshal/i.test(x.wpn||"")).length;
+    const wp={};for(const x of M.deaths)if(x.wpn)wp[x.wpn]=(wp[x.wpn]||0)+1;const topW=Object.entries(wp).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w,n])=>`${w} (${n})`).join(", ");
+    el.innerHTML=`<div class="sec-head"><div><h2>🗺 Où il meurt</h2><div class="sub">Ses morts (rouge) et ses kills (vert) sur ses ${dets.length} dernières parties détaillées en ${esc(MODES.find(m=>m[2]===label)[1])}. Choisis une carte :</div></div></div>
+      <div class="chips">${names.map(n=>`<button class="chip" type="button" data-vdm="${esc(n)}" aria-pressed="${n===cur}">${esc(n)}<span class="c">${byMap[n].deaths.length}</span></button>`).join("")}</div>
+      <div class="cmap"><svg class="dmap" viewBox="0 0 1000 1000" role="img" aria-label="Carte des morts sur ${esc(cur)}"><rect width="1000" height="1000" fill="#12161f"/>${M.img?`<image href="${esc(M.img)}" width="1000" height="1000" opacity=".85"/>`:""}
+        ${M.kills.map(k=>`<circle cx="${k[1]*1000}" cy="${k[2]*1000}" r="11" fill="#3fe0a0" opacity=".8"/>`).join("")}
+        ${M.deaths.map(x=>x.at?`<circle cx="${x.at[0]*1000}" cy="${x.at[1]*1000}" r="13" fill="${RED}" stroke="#000" stroke-width="3" opacity=".9"><title>Round ${x.r} · ${esc(x.by||"")} ${esc(x.wpn||"")}</title></circle>`:"").join("")}</svg>
+        <div class="cleg"><span><i style="background:${RED}"></i>ses morts</span><span><i style="background:#3fe0a0"></i>ses kills</span>
+        <p><b>${esc(cur)}</b> : ${M.deaths.length} morts sur ${M.n} partie${M.n>1?"s":""}. ${first} fois mort en premier dans le round, ${traded} morts échangées par son équipe (${pc(traded/M.deaths.length*100)}).${snip?` ${snip} morts au sniper.`:""}</p>
+        ${topW?`<p class="rnote">Armes qui le tuent le plus : ${esc(topW)}.</p>`:""}
+        <p class="rnote">Le détail de chaque mort, avec les flèches et les conseils, est dans « Ses parties » plus bas.</p></div></div>`;
+  }
+
+  /* ---------- interactions ---------- */
+  document.addEventListener("click",e=>{
+    const m=e.target.closest("[data-vm]");if(m){mode=m.dataset.vm;fMap=null;fAgent=null;render();return}
+    const a=e.target.closest("[data-va]");if(a){fAgent=fAgent===a.dataset.va?null:a.dataset.va;render();$("vMTitle").scrollIntoView({block:"start",behavior:"smooth"});return}
+    const mp=e.target.closest("[data-vmap]");if(mp){fMap=fMap===mp.dataset.vmap?null:mp.dataset.vmap;render();$("vMTitle").scrollIntoView({block:"start",behavior:"smooth"});return}
+    const dm=e.target.closest("[data-vdm]");if(dm){vCur=dm.dataset.vdm;renderDeathAgg(MODES.find(x=>x[0]===mode)[2]);return}
+    if(e.target.closest("[data-vclear]")){fMap=null;fAgent=null;render();return}
+  });
+  document.addEventListener("toggle",e=>{const d=e.target;if(!d.dataset||!d.dataset.vid||!d.open)return;const slot=d.querySelector(".vslot");if(!slot||slot.dataset.done)return;
+    const m=D.matches.find(x=>x.id===d.dataset.vid),det=(D.details||[]).find(x=>x.id===d.dataset.vid);slot.innerHTML=matchBody(m,det,!["Team Deathmatch","Deathmatch"].includes(m.mode));slot.dataset.done="1"},true);
+
+  /* ---------- bascule LoL / Valorant ---------- */
   function setGame(g){
-    document.querySelectorAll(".gsw button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.game===g));
+    document.querySelectorAll('.gsw [data-game]').forEach(b=>b.setAttribute("aria-pressed",b.dataset.game===g));
     $("lolView").hidden=g!=="lol"; $("valoView").hidden=g!=="valo";
     try{localStorage.setItem("game",g)}catch(e){}
     window.scrollTo(0,0);
+    if(g==="valo"&&!D)load();
+  }
+  async function load(){
+    try{D=await fetch("data/valorant.json?v="+Date.now()).then(r=>r.json())}catch(e){D=null}
+    if(!D){$("vBody").innerHTML=`<div class="empty">Stats Valorant indisponibles.</div>`;return}
+    if(!D.playlists[mode])mode=Object.keys(D.playlists).sort((a,b)=>D.playlists[b].matchesPlayed-D.playlists[a].matchesPlayed)[0];
+    $("vSub").textContent=`Valorant · EUW · niveau ${D.level??"?"} · meilleur rang atteint : ${D.peak||"non classé"}`;
+    render();
   }
   document.querySelector(".gsw").addEventListener("click",e=>{const b=e.target.closest("[data-game]");if(b)setGame(b.dataset.game)});
-  try{const g=localStorage.getItem("game");if(g==="valo"&&new URLSearchParams(location.search).get("j")==="i-hate-him")setGame("valo")}catch(e){}
-  const cnt=(a,k)=>a.reduce((m,x)=>(m[x[k]]=(m[x[k]]||0)+1,m),{});
-  function render(){
-    const n=VM.length; if(!n){$("vMatches").innerHTML=`<div class="empty">Aucune partie Valorant pour l'instant.</div>`;return}
-    const rounds=VM.reduce((s,m)=>s+m.rounds,0), quick=VM.filter(m=>m.mode==="Partie rapide").length;
-    const ag=cnt(VM,"agent"), ro=cnt(VM,"role");
-    $("vTotals").innerHTML=`<div><b>${n}</b><span>parties</span></div><div><b>${quick} / ${n-quick}</b><span>rapides / complètes</span></div><div><b>${rounds}</b><span>manches</span></div><div><b>${Object.keys(ag).length}</b><span>agents joués</span></div>`;
-    const order=["Contrôleur","Sentinelle","Initiateur","Duelliste"];
-    $("vRoles").innerHTML=order.map(r=>`<div class="vbar"><span>${r}</span><span class="track"><i style="width:${(ro[r]||0)/n*100}%"></i></span><span>${ro[r]||0}</span></div>`).join("");
-    const ags=Object.entries(ag).sort((a,b)=>b[1]-a[1]);
-    $("vAgents").innerHTML=ags.map(([a,k])=>{const ms=VM.filter(m=>m.agent===a);return `<button class="acard" type="button" data-ag="${esc(a)}" aria-pressed="${fAgent===a}"><span class="an">${esc(a)}</span><span class="ar">${esc(ms[0].role)}</span><span class="ag">${k} <span class="sub" style="font-family:var(--body)">partie${k>1?"s":""}</span></span><span class="sub">${esc([...new Set(ms.map(m=>m.map))].join(", "))}</span></button>`}).join("");
-    // observations
-    const noCtrl=VM.filter(m=>!m.team.some(x=>x.role==="Contrôleur"));
-    const prem=VM.filter(m=>m.premade>0).length;
-    const top=ags[0], ctrl=ro["Contrôleur"]||0, sent=ro["Sentinelle"]||0;
-    const good=[{t:"Il remplit les rôles d'équipe",d:`${ctrl} parties en contrôleur et ${sent} en sentinelle sur ${n} : il prend souvent les rôles que personne ne veut.`},
-      (()=>{const tops=ags.filter(a=>a[1]===top[1]).map(a=>a[0]);return {t:`Agent${tops.length>1?"s":""} principa${tops.length>1?"ux":"l"} : ${tops.join(" et ")}`,d:tops.map(a=>`${a} : ${ag[a]} parties (${[...new Set(VM.filter(m=>m.agent===a).map(m=>m.map))].join(", ")})`).join(" · ")}})()];
-    const bad=[];
-    if(noCtrl.length)bad.push({t:`${noCtrl.length} partie${noCtrl.length>1?"s":""} sans aucun contrôleur dans son équipe`,d:noCtrl.map(m=>`${m.map} (il jouait ${m.agent})`).join(", ")+". Sans fumigènes, prendre un site est beaucoup plus dur : dans ces cas-là, il peut prendre Omen, qu'il maîtrise déjà."});
-    bad.push({t:"Il joue surtout avec ses deux potes",d:`${prem} parties sur ${n} avec au moins un pote. Ses deux parties complètes (en 13 manches) étaient en solo : bon test pour comparer, une fois le profil public.`});
-    const li=a=>`<ul>${a.map(x=>`<li><b>${esc(x.t)}</b><span>${esc(x.d)}</span></li>`).join("")}</ul>`;
-    $("vObs").innerHTML=`<div class="bcol"><h3>Points forts</h3>${li(good)}</div><div class="bcol w"><h3>À surveiller</h3>${li(bad)}</div>`;
-    const list=VM.filter(m=>!fAgent||m.agent===fAgent).sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
-    const fd=iso=>{try{return new Date(iso).toLocaleString("fr-FR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Paris"})}catch(e){return ""}};
-    $("vMTitle").textContent=fAgent?`Ses parties en ${fAgent} (${list.length})`:`Ses parties (${n})`;
-    const chip=x=>`<span class="ach${x.me?" me":""}${x.friend?" fr":""}">${esc(x.agent)}<small>${esc(x.role)}</small></span>`;
-    $("vMatches").innerHTML=list.map((m,i)=>`<details class="vm"${i===0?" open":""}><summary>
-      <span class="vt">${esc(m.map)} · ${esc(m.agent)}${m.date?` <span class="rnote" style="font-weight:500">· ${esc(fd(m.date))}</span>`:""}</span>
-      <span class="meta">${esc(m.mode)} · ${m.rounds} manches (${esc(m.score)}) · ${m.premade?`avec ${m.premade} pote${m.premade>1?"s":""}`:"en solo"}</span></summary>
-      <div class="vbody">
-        <div class="comp"><span class="lab">Son équipe</span>${m.team.map(chip).join("")}</div>
-        <div class="comp"><span class="lab">En face</span>${m.enemies.map(chip).join("")}</div>
-        <div class="rtiles">
-          <div><b>${m.deaths}</b><span>morts (10 joueurs)</span></div>
-          <div><b>${String(m.deathsPerRound).replace(".",",")}</b><span>morts / manche</span></div>
-          <div><b>${m.plants}</b><span>spikes posés</span></div>
-          <div><b>${m.defuses}</b><span>spikes désamorcés</span></div>
-          <div><b>${m.explosions}</b><span>spikes explosés</span></div>
-          <div><b>${m.ults}</b><span>ultis utilisés</span></div>
-          <div><b>${String(m.duration).replace(".",",")}</b><span>minutes</span></div>
-          <div><b>${m.team.some(x=>x.role==="Contrôleur")?"Oui":"Non"}</b><span>contrôleur dans l'équipe</span></div>
-        </div>
-        <div class="rnote">Partie ${esc(m.id)} · version ${esc(m.version)}</div>
-      </div></details>`).join("");
-  }
-  document.addEventListener("click",e=>{const a=e.target.closest("[data-ag]");if(a){fAgent=fAgent===a.dataset.ag?null:a.dataset.ag;render()}});
   const vbtn=document.querySelector('.gsw button[data-game="valo"]');
   window.addEventListener("player",e=>{const ok=e.detail==="i-hate-him";vbtn.hidden=!ok;if(!ok&&!$("valoView").hidden)setGame("lol")});
-  fetch("data/valo.json?v="+Date.now()).then(r=>r.ok?r.json():[]).then(a=>{VM=a;render()}).catch(()=>{});
+  try{if(localStorage.getItem("game")==="valo"&&new URLSearchParams(location.search).get("j")!=="evanya")setGame("valo")}catch(e){}
 })();
 </script>
 </body>
