@@ -661,9 +661,10 @@ function step(d){
 }
 
 /* ---------- interactions ---------- */
+function goTo(id){const go=()=>{const t=$(id);if(t)t.scrollIntoView({block:"start"})};go();requestAnimationFrame(go);setTimeout(go,250);setTimeout(go,700)}
 document.addEventListener("click",e=>{
-  const dmb=e.target.closest("[data-dm]"); if(dmb&&!e.target.closest("#panel")){openPanel(dmb.dataset.dm);const t=$("dmSec");if(t)t.scrollIntoView({block:"start"});return}
-  if(e.target.closest("[data-goto-dm]")){const t=$("dmSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
+  const dmb=e.target.closest("[data-dm]"); if(dmb&&!e.target.closest("#panel")){openPanel(dmb.dataset.dm);goTo("dmSec");return}
+  if(e.target.closest("[data-goto-dm]")){goTo("dmSec");return}
   const rpb=e.target.closest("[data-rp]"); if(rpb&&!e.target.closest("#panel")){openPanel(rpb.dataset.rp);const t=$("rpSec");if(t)t.scrollIntoView({block:"start"});return}
   if(e.target.closest("[data-goto-build]")){const t=$("buildSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
   if(e.target.closest("[data-goto-rp]")){const t=$("rpSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
