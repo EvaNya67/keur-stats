@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEUR Stats Tracker</title>
+<meta name="theme-color" content="#0f1420">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23c8a24a'/%3E%3Cpath d='M9 22V10h3v5l5-5h4l-6 6 6 6h-4l-5-5v5z' fill='%230f1420'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --surface-2:#eef0f4; --line:#dde1e8;
+  --ink:#151a24; --ink-2:#4a5263; --ink-3:#7b8496;
+  --accent:#a8801f; --series:#2f6fd6; --win:#1f8a5b; --loss:#c43d3d;
+  --shadow:0 1px 2px rgba(10,15,25,.06),0 4px 16px rgba(10,15,25,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0f1420; --surface:#171d2b; --surface-2:#1f2637; --line:#2a3245;
+    --ink:#e9ecf2; --ink-2:#aeb6c6; --ink-3:#7d869a;
+    --accent:#d6b25a; --series:#6aa1ff; --win:#3fbf86; --loss:#ef6b6b;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em}
+.brand i{width:28px;height:28px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:var(--bg);font-style:normal;font-size:15px}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:10px}
+.tabs button{border:0;background:none;color:var(--ink-2);font:inherit;font-weight:600;padding:6px 14px;border-radius:7px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+h1{font-size:26px;margin:0 0 2px;letter-spacing:-.01em}
+.sub{color:var(--ink-3);font-size:13px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:0 0 10px;font-weight:700}
+.tier{font-size:24px;font-weight:750;letter-spacing:-.01em}
+.tier small{font-size:15px;color:var(--accent);font-weight:700;margin-left:6px}
+.wl{color:var(--ink-2);font-size:14px;margin-top:4px;font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:3px;background:var(--surface-2);margin-top:10px;overflow:hidden;display:flex;gap:2px}
+.bar span:first-child{background:var(--win)} .bar span:last-child{background:var(--loss)}
+.muted{color:var(--ink-3)}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:220px}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:7px;white-space:nowrap;transform:translate(-50%,-115%);opacity:0;transition:opacity .1s}
+.tip b{display:block;font-size:13px}
+.tablewrap{overflow-x:auto;margin:0 -18px;padding:0 18px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px;min-width:620px}
+th{font-size:12px;text-align:right;color:var(--ink-3);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th[aria-sort]{color:var(--ink)}
+th[aria-sort=descending]::after{content:" ↓"} th[aria-sort=ascending]::after{content:" ↑"}
+td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+.champ{display:flex;align-items:center;gap:10px;font-weight:600;white-space:nowrap}
+.champ img{width:28px;height:28px;border-radius:6px;background:var(--surface-2)}
+.good{color:var(--win)} .bad{color:var(--loss)}
+.matches{display:flex;flex-direction:column;gap:6px}
+.m{display:grid;grid-template-columns:6px 32px 1fr auto;align-items:center;gap:10px;padding:6px 0}
+.m .s{align-self:stretch;border-radius:3px}
+.m img{width:32px;height:32px;border-radius:7px}
+.m .n{font-weight:600} .m .d{font-size:12px;color:var(--ink-3)}
+.m .r{text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+.empty{padding:40px 16px;text-align:center;color:var(--ink-2)}
+footer{margin-top:28px;font-size:11px;color:var(--ink-3);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><i>K</i>KEUR Stats</div>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+  </header>
+  <main id="app"><div class="empty">Chargement…</div></main>
+  <footer>KEUR Stats Tracker isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</footer>
+</div>
+<script>
+const TIER_FR={IRON:"Fer",BRONZE:"Bronze",SILVER:"Argent",GOLD:"Or",PLATINUM:"Platine",EMERALD:"Émeraude",DIAMOND:"Diamant",MASTER:"Maître",GRANDMASTER:"Grand Maître",CHALLENGER:"Challenger"};
+const TIERS=["IRON","BRONZE","SILVER","GOLD","PLATINUM","EMERALD","DIAMOND"];
+const DIVN={I:1,II:2,III:3,IV:4};
+const QUEUE={420:"Solo/Duo",440:"Flex"};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const tierLabel=e=>e?(TIERS.includes(e.tier)?`${TIER_FR[e.tier]} ${DIVN[e.rank]}`:TIER_FR[e.tier]||e.tier):"Non classé";
+const pct=(w,l)=>w+l?Math.round(w/(w+l)*100):0;
+const ago=iso=>{const m=Math.round((Date.now()-new Date(iso))/60000);if(m<1)return"à l'instant";if(m<60)return`il y a ${m} min`;const h=Math.round(m/60);if(h<48)return`il y a ${h} h`;return`il y a ${Math.round(h/24)} j`;};
+const icon=(v,id)=>v?`https://ddragon.leagueoflegends.com/cdn/${v}/img/champion/${id}.png`:"";
+
+let players=[],current=null,data=null,sort={key:"games",dir:-1};
+const fetchJSON=u=>fetch(u+"?v="+Date.now()).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+
+async function init(){
+  try{players=await fetchJSON("data/players.json")}catch{players=[]}
+  if(!players.length){document.getElementById("app").innerHTML=`<div class="card empty">Pas encore de données.<br>Lance le workflow « Mise à jour des stats » dans l'onglet Actions de GitHub.</div>`;return}
+  const want=new URLSearchParams(location.search).get("j");
+  renderTabs();
+  select((players.find(p=>p.slug===want)||players[0]).slug);
+}
+function renderTabs(){
+  const t=document.getElementById("tabs");
+  t.innerHTML=players.map(p=>`<button role="tab" data-s="${esc(p.slug)}">${esc(p.riotId.split("#")[0])}</button>`).join("");
+  t.onclick=e=>{const b=e.target.closest("button");if(b)select(b.dataset.s)};
+}
+async function select(slug){
+  current=slug;
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.s===slug));
+  history.replaceState(null,"","?j="+encodeURIComponent(slug));
+  try{data=await fetchJSON(`data/${slug}.json`)}catch{data=null}
+  render();
+}
+function rankCard(title,e){
+  if(!e)return`<section class="card"><h2>${title}</h2><div class="tier muted">Non classé</div></section>`;
+  const p=pct(e.wins,e.losses);
+  return`<section class="card"><h2>${title}</h2>
+    <div class="tier">${esc(tierLabel(e))}<small>${e.lp} LP</small></div>
+    <div class="wl">${e.wins}V ${e.losses}D · <span class="${p>=50?"good":"bad"}">${p}%</span></div>
+    <div class="bar" role="img" aria-label="${p}% de victoires"><span style="flex:${e.wins}"></span><span style="flex:${e.losses}"></span></div></section>`;
+}
+function render(){
+  const app=document.getElementById("app");
+  if(!data){app.innerHTML=`<div class="card empty">Pas encore de données pour ce joueur.</div>`;return}
+  const [name,tag]=data.riotId.split("#");
+  app.innerHTML=`
+    <h1>${esc(name)} <span class="muted">#${esc(tag)}</span></h1>
+    <div class="sub">EUW · mis à jour ${ago(data.updatedAt)}</div>
+    <div class="grid">${rankCard("Classé Solo/Duo",data.solo)}${rankCard("Classé Flex",data.flex)}</div>
+    <section class="card" style="margin-bottom:12px"><h2>Évolution Solo/Duo</h2><div class="chart" id="chart"></div></section>
+    <div class="grid" style="grid-template-columns:1fr">
+      <section class="card"><h2>Champions · Classé, saison ${new Date().getFullYear()}</h2><div class="tablewrap" id="champs"></div></section>
+      <section class="card"><h2>Dernières parties</h2><div class="matches" id="matches"></div></section>
+    </div>`;
+  drawChart();drawTable();drawMatches();
+}
+function drawChart(){
+  const el=document.getElementById("chart"),h=data.history||[];
+  if(h.length<2){el.innerHTML=`<p class="muted" style="margin:0">La courbe apparaîtra après quelques parties Solo/Duo.</p>`;return}
+  const W=Math.max(320,el.clientWidth),H=220,pl=96,pr=12,pt=12,pb=26;
+  const ys=h.map(p=>p.score);let lo=Math.min(...ys),hi=Math.max(...ys);
+  lo=Math.floor((lo-20)/100)*100;hi=Math.ceil((hi+20)/100)*100;if(hi-lo<200)hi=lo+200;
+  const x=i=>pl+(W-pl-pr)*(h.length===1?.5:i/(h.length-1)),y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo));
+  const tickLabel=v=>{if(v>=2800)return"Maître+";const t=TIERS[Math.floor(v/400)],d=4-Math.floor((v%400)/100);return`${TIER_FR[t]} ${d}`};
+  let grid="";for(let v=lo;v<=hi;v+=100){const big=v%400===0;grid+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" ${big?"":'stroke-dasharray="2 4"'}/>`+(v<hi?`<text x="${pl-8}" y="${y(v+50)+4}" text-anchor="end" font-size="11" fill="var(--ink-3)">${tickLabel(v)}</text>`:"")}
+  const d=h.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(p.score).toFixed(1)}`).join("");
+  const fmt=t=>new Date(t).toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du rang Solo/Duo">${grid}
+    <path d="${d}" fill="none" stroke="var(--series)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <text x="${pl}" y="${H-6}" font-size="11" fill="var(--ink-3)">${fmt(h[0].t)}</text>
+    <text x="${W-pr}" y="${H-6}" font-size="11" fill="var(--ink-3)" text-anchor="end">${fmt(h[h.length-1].t)}</text>
+    <line id="cx" y1="${pt}" y2="${H-pb}" stroke="var(--ink-3)" stroke-width="1" opacity="0"/>
+    <circle id="cd" r="5" fill="var(--series)" stroke="var(--surface)" stroke-width="2" opacity="0"/>
+    <rect x="${pl}" y="0" width="${W-pl-pr}" height="${H}" fill="transparent" id="hit"/></svg><div class="tip" id="tip"></div>`;
+  const svg=el.querySelector("svg"),tip=el.querySelector("#tip"),cx=el.querySelector("#cx"),cd=el.querySelector("#cd");
+  const move=ev=>{const r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)*W/r.width;
+    let i=Math.round((px-pl)/(W-pl-pr)*(h.length-1));i=Math.max(0,Math.min(h.length-1,i));const p=h[i];
+    cx.setAttribute("x1",x(i));cx.setAttribute("x2",x(i));cx.setAttribute("opacity",.5);
+    cd.setAttribute("cx",x(i));cd.setAttribute("cy",y(p.score));cd.setAttribute("opacity",1);
+    tip.innerHTML=`<b>${esc(tierLabel(p))} · ${p.lp} LP</b>${new Date(p.t).toLocaleString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`;
+    tip.style.left=(x(i)*r.width/W)+"px";tip.style.top=(y(p.score)*r.height/H)+"px";tip.style.opacity=1};
+  const hide=()=>{tip.style.opacity=0;cx.setAttribute("opacity",0);cd.setAttribute("opacity",0)};
+  svg.addEventListener("pointermove",move);svg.addEventListener("pointerleave",hide);
+}
+const COLS=[["name","Champion"],["games","Parties"],["wr","Victoires"],["kda","KDA"],["kills","K / D / A"],["kp","KP"],["cs","CS"],["cspm","CS/min"]];
+function drawTable(){
+  const el=document.getElementById("champs"),list=(data.champions||[]).map(c=>({...c,wr:pct(c.wins,c.losses),kills:c.k}));
+  if(!list.length){el.innerHTML=`<p class="muted" style="margin:0">Aucune partie classée cette saison.</p>`;return}
+  const {key,dir}=sort;
+  list.sort((a,b)=>key==="name"?dir*a.name.localeCompare(b.name,"fr"):dir*(a[key]-b[key])||b.games-a.games);
+  el.innerHTML=`<table><thead><tr>${COLS.map(([k,l])=>`<th data-k="${k}" ${k===key?`aria-sort="${dir>0?"ascending":"descending"}"`:""}>${l}</th>`).join("")}</tr></thead><tbody>${
+    list.map(c=>`<tr><td><div class="champ"><img src="${icon(data.ddragon,c.id)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">${esc(c.name)}</div></td>
+      <td>${c.games}</td><td><span class="${c.wr>=50?"good":"bad"}">${c.wr}%</span> <span class="muted">${c.wins}V ${c.losses}D</span></td>
+      <td><b>${c.kda.toFixed(2)}</b></td><td>${c.k} / <span class="bad">${c.d}</span> / ${c.a}</td><td>${c.kp}%</td><td>${c.cs}</td><td>${c.cspm}</td></tr>`).join("")}</tbody></table>`;
+  el.querySelector("thead").onclick=e=>{const th=e.target.closest("th");if(!th)return;const k=th.dataset.k;sort={key:k,dir:sort.key===k?-sort.dir:(k==="name"?1:-1)};drawTable()};
+}
+function drawMatches(){
+  const el=document.getElementById("matches"),ms=(data.matches||[]).filter(m=>!m.skip).slice(-10).reverse();
+  const names=Object.fromEntries((data.champions||[]).map(c=>[c.id,c.name]));
+  if(!ms.length){el.innerHTML=`<p class="muted" style="margin:0">Aucune partie pour l'instant.</p>`;return}
+  el.innerHTML=ms.map(m=>`<div class="m"><span class="s" style="background:var(--${m.win?"win":"loss"})"></span>
+    <img src="${icon(data.ddragon,m.champ)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+    <div><div class="n">${esc(names[m.champ]||m.champ)} <span class="${m.win?"good":"bad"}" style="font-size:13px">${m.win?"Victoire":"Défaite"}</span></div>
+    <div class="d">${QUEUE[m.queue]||"Classé"} · ${Math.floor(m.dur/60)} min · ${ago(new Date(m.t).toISOString())}</div></div>
+    <div class="r"><b>${m.k} / <span class="bad">${m.d}</span> / ${m.a}</b><div class="d">${m.cs} CS</div></div></div>`).join("");
+}
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>data&&drawChart(),150)});
+init();
+</script>
+</body>
+</html>
