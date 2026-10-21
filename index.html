@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0A0F1A">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23c8aa6e'/%3E%3Cpath d='M9 22V10h3v5l5-5h4l-6 6 6 6h-4l-5-5v5z' fill='%230a0f1a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <style>
 /* Layout : en-tête invocateur → aperçu (main + rangs) → bilan → grille de fiches champion → fiche détaillée en panneau */
 :root{
@@ -289,6 +289,66 @@ footer.legal{font-size:11px;color:var(--muted);line-height:1.5;max-width:1120px;
 .rstrip i{position:absolute;top:-6px;right:-5px;font:700 9px var(--body);font-style:normal;background:#f2c94c;color:#000;border-radius:4px;padding:0 3px}
 .vsb tr.me td{color:#f2c94c}.vsb tr.fr td:first-child{color:#9fd3ff}
 .vsb thead+tbody tr:first-child td{border-top:0}
+
+/* ===== Look e-sport ===== */
+:root{--display:"Oxanium","Segoe UI",sans-serif;--body:"Manrope",system-ui,sans-serif;
+  --bg:#070b14;--raise:#0f1626;--raise-2:#16203a;--line:#22304f;--fg:#eef2fb;--muted:#8f9bb8;
+  --gold:#e8b85c;--gold-hi:#ffe2a3;--gold-soft:rgba(232,184,92,.14);--cyan:#36d6ff;--cyan-soft:rgba(54,214,255,.12);
+  --win:#38e0a0;--loss:#ff5d73;--violet:#9b7bff}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef2f9;--raise:#fff;--raise-2:#f3f6fc;--line:#d9e0ee;--fg:#101828;--muted:#5b6782;--gold:#b07d1c;--cyan:#0a8fb3;--cyan-soft:rgba(10,143,179,.1);--win:#108a5c;--loss:#d33650}}
+body{background:radial-gradient(1200px 600px at 10% -10%,rgba(54,214,255,.10),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(155,123,255,.10),transparent 55%),var(--bg);background-attachment:fixed;letter-spacing:.005em}
+h1,h2,.card-name,.hero-name,.tier,.ph h3{font-family:var(--display);letter-spacing:.01em}
+h1{font-weight:800;background:linear-gradient(90deg,var(--fg),var(--gold-hi) 60%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .tag{-webkit-text-fill-color:var(--cyan);color:var(--cyan)}
+h2{font-weight:700;font-size:24px;display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:6px;height:22px;border-radius:3px;background:linear-gradient(var(--gold),var(--cyan))}
+.label{color:var(--cyan)}
+.gsw{background:color-mix(in srgb,var(--bg) 80%,transparent)}
+.gsw button[aria-pressed="true"]{background:linear-gradient(135deg,var(--gold),#c98b2b);color:#1a1205}
+#players button[aria-pressed="true"]{background:linear-gradient(135deg,var(--cyan),#2a7bff);color:#04111d}
+.card,.rank,.bcol,.box,.tile,.cmp,.rg,.dcard,.totals div{border-color:var(--line)}
+.card{position:relative;overflow:hidden;background:linear-gradient(160deg,var(--raise-2),var(--raise) 55%)}
+.card::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--line)}
+.card:has(.v-top)::after{background:linear-gradient(90deg,var(--win),var(--cyan))}
+.card:has(.v-work)::after{background:linear-gradient(90deg,var(--loss),#ff9a5d)}
+.card:has(.v-promis)::after{background:linear-gradient(90deg,var(--gold),var(--gold-hi))}
+.card:hover{border-color:var(--cyan);box-shadow:0 10px 30px -12px rgba(54,214,255,.45)}
+.card-wr b{font-family:var(--display);font-size:30px}
+.crest.cimg{border-radius:14px;object-fit:cover;box-shadow:0 0 0 2px var(--gold),0 6px 18px -6px rgba(0,0,0,.6)}
+.card .crest.cimg{width:56px;height:56px}
+.hero .crest.cimg{width:120px;height:120px;border-radius:20px}
+.ph .crest.cimg{width:92px;height:92px;border-radius:18px}
+.crest.cfb,.ci.cfb{display:grid;place-items:center;background:var(--raise-2);color:var(--gold);font:700 14px var(--display);border-radius:12px}
+.hero{background:linear-gradient(90deg,rgba(7,11,20,.96) 0%,rgba(7,11,20,.82) 45%,rgba(7,11,20,.25) 100%),var(--splash,none) center 22%/cover,var(--raise);min-height:230px}
+.hero .hero-name{font-size:clamp(36px,5.5vw,60px);font-weight:800;color:#fff;text-shadow:0 4px 24px rgba(0,0,0,.6)}
+.hero .kpi b{color:#fff}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .hero .kpi span,:root:not([data-theme="dark"]) .hero .label{color:#cfe6ff}}
+.ph{background:linear-gradient(90deg,rgba(7,11,20,.95),rgba(7,11,20,.7) 55%,rgba(7,11,20,.35)),var(--splash,none) center 20%/cover,var(--raise)}
+.ph h3{color:#fff;font-weight:800}.ph .label{color:var(--cyan)}.ph .pos{color:#c9d3ea}
+.tier{background:linear-gradient(90deg,var(--gold-hi),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.totals b,.tile b,.kpi b{font-family:var(--display);font-weight:700}
+.chip[aria-pressed="true"]{border-color:var(--cyan);background:var(--cyan-soft);color:var(--fg)}
+.rpb{background:var(--gold-soft)}
+.bcol h3::before{box-shadow:0 0 10px var(--win)}.bcol.w h3::before{box-shadow:0 0 10px var(--loss)}
+.rg.w{border-left-color:var(--win)}.rg{border-left-color:var(--loss)}
+.btn{border-color:var(--cyan);color:var(--cyan)}.btn:hover{background:var(--cyan-soft)}
+/* icônes dans le texte */
+.ci{width:24px;height:24px;border-radius:7px;vertical-align:middle;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
+.ci.sm{width:20px;height:20px;border-radius:6px}
+.ci.big{width:54px;height:54px;border-radius:14px;box-shadow:0 0 0 2px var(--gold)}
+.mu1{display:inline-flex;align-items:center;gap:8px}
+.vsi{display:inline-flex;align-items:center;gap:6px}
+/* phase de lane */
+.lane{display:grid;gap:12px;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--cyan-soft),transparent 60%),var(--raise-2);border:1px solid var(--line)}
+.lane-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.lane-h .ci.big:nth-of-type(2){box-shadow:0 0 0 2px var(--loss)}
+.vsx{font:800 14px var(--display);color:var(--muted)}
+.lane-h>div{display:grid;gap:2px}
+.lane-v{font:800 20px var(--display)}
+.box.pro{border-color:color-mix(in srgb,var(--cyan) 50%,var(--line));background:linear-gradient(var(--cyan-soft),var(--cyan-soft)),var(--raise)}
+.box.pro h5{color:var(--cyan)}
+.box.pro p{color:var(--fg)}
+.mut td:first-child{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -398,7 +458,7 @@ const ICON={
   bow:`<path d="M46 24 Q78 47 46 70" fill="none" stroke="var(--crest-ink)" stroke-width="4" stroke-linecap="round"/><path d="M46 24 V70" stroke="var(--gold)" stroke-width="2"/><path d="M40 47 H80 M80 47 l-8 -6 M80 47 l-8 6" stroke="var(--crest-ink)" stroke-width="4" stroke-linecap="round" fill="none"/>`
 };
 function champClass(name){return CL[String(name||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase()]||null}
-function crest(name){
+function crestSVG(name){
   const h=hue(name), ini=esc(name.replace(/[^A-Za-zÀ-ÿ]/g,"").slice(0,2).toUpperCase()), c=champClass(name);
   const frame=`<polygon points="60,3 109,31 109,89 60,117 11,89 11,31" fill="hsl(${h} 42% 26%)" stroke="var(--gold)" stroke-width="3"/>
     <polygon points="60,15 98,37 98,83 60,105 22,83 22,37" fill="hsl(${h} 45% 33%)" stroke="var(--gold)" stroke-width="1" opacity=".9"/>`;
@@ -505,6 +565,7 @@ function renderOverview(){
       <span class="hero-name" style="display:block">${esc(top.name)}</span>
       <span class="vchip v-${p.v}">${VL[p.v]}</span>
       <span class="kpis"><span class="kpi"><b>${top.games}</b><span>parties</span></span><span class="kpi"><b class="${p.wr>=.55?"good":p.wr<.45?"bad":""}">${pct(p.wr)}</b><span>victoires</span></span><span class="kpi"><b>${f2(p.kda)}</b><span>KDA</span></span><span class="kpi"><b>${f1(top.k)}/${f1(top.d)}/${f1(top.a)}</b><span>K / D / A</span></span></span></span>`;
+    {const sp=splashUrl(top.name);hero.style.setProperty("--splash",sp?`url("${sp}")`:"none")}
     hero.dataset.n=top.name; hero.setAttribute("aria-label",`Ouvrir la fiche de ${top.name}`); hero.hidden=false;
   } else hero.hidden=true;
   const A=AN.A;
@@ -588,7 +649,7 @@ function replayBlock(name){
   return `<div class="pb" id="rpSec"><h4>Partie par partie (${all.length})${all.length>list.length?` · les ${list.length} plus récentes`:""}</h4><div class="rgames">${list.map((g,i)=>{
     const o=g.opp;
     const row=(l,a,b,hb,f)=>{const fa=f?f(a):a,fb=f?f(b):b;const c=a===b?"":((a>b)===hb?"good":"bad");return `<tr><td>${l}</td><td class="${c}">${fa}</td><td>${fb}</td></tr>`};
-    const vs=o?`<table class="vs"><thead><tr><th></th><th>Lui</th><th>${esc(o.champion)}</th></tr></thead><tbody>
+    const vs=o?`<table class="vs"><thead><tr><th></th><th><span class="mu1">${ico(g.champion)} Lui</span></th><th><span class="mu1">${ico(o.champion)} ${esc(o.champion)}</span></th></tr></thead><tbody>
       <tr><td>K / D / A</td><td>${g.k} / ${g.d} / ${g.a}</td><td>${o.k} / ${o.d} / ${o.a}</td></tr>
       ${row("Dégâts aux champions",g.dmg,o.dmg,true,kf)}
       ${row("Or gagné",g.gold,o.gold,true,kf)}
@@ -601,7 +662,7 @@ function replayBlock(name){
     </tbody></table>`:"";
     return `<details class="rg ${g.win?"w":""}"${i===0?" open":""}><summary>
       <span class="res ${g.win?"good":"bad"}">${g.short?"Écourtée":g.win?"Victoire":"Défaite"}</span>
-      <span class="kd">${g.k} / ${g.d} / ${g.a}${o?` <span class="rnote">contre ${esc(o.champion)}</span>`:""}</span>
+      <span class="kd">${g.k} / ${g.d} / ${g.a}${o?` <span class="rnote vsi">contre ${ico(o.champion,"ci sm")} ${esc(o.champion)}</span>`:""}</span>
       <span class="meta">${g.date?esc(new Date(g.date).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short",timeZone:"Europe/Paris"}))+" · ":""}${esc(g.mode==="ARAM"?"ARAM":g.role+" · "+(g.queueLabel||"Faille"))} · ${String(g.duration).replace(".",",")} min · ${esc((g.spells||[]).filter(Boolean).join(" + "))}${g.keystone?" · "+esc(g.keystone):""}</span>
     </summary><div class="rg-body">
       <div class="rtiles">
@@ -615,6 +676,7 @@ function replayBlock(name){
         <div><b>${g.teamKills}–${g.enemyKills}</b><span>kills équipes</span></div>
       </div>
       ${g.items&&g.items.length?`<div><div class="rnote" style="margin-bottom:6px">Son build en fin de partie</div><div class="ichips">${g.items.map(i=>`<span class="ichip">${esc(i)}</span>`).join("")}</div></div>`:""}
+      ${laneBlock(g)}
       ${vs}
       <div class="dslot" data-g="${esc(g.matchId||g.id)}">${i===0?deathsBlock(g):""}</div>
       <div class="two"><div class="box"><h5 class="good">Points forts</h5>${li(g.strengths||[])}</div><div class="box"><h5 class="bad">À travailler</h5>${li(g.weaknesses||[])}</div></div>
@@ -639,9 +701,10 @@ function renderPanel(){
   const ul=a=>a.length?`<ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:`<p>Rien à signaler.</p>`;
   const ago=t=>{const m=Math.round((Date.now()-t)/60000);if(m<60)return `il y a ${m} min`;const h=Math.round(m/60);return h<48?`il y a ${h} h`:`il y a ${Math.round(h/24)} j`};
   $("panel").innerHTML=`
-    <header class="ph">${crest(c.name)}
+    <header class="ph" style="--splash:${splashUrl(c.name)?`url('${splashUrl(c.name)}')`:"none"}">${crest(c.name)}
       <div style="min-width:0"><span class="label">Fiche champion</span><h3 id="pName">${esc(c.name)}</h3><span class="vchip v-${p.v}">${VL[p.v]}</span>
         ${BUILDS.some(x=>norm(x.name)===norm(c.name))||GAMES.some(g=>norm(g.champion)===norm(c.name)&&(g.items||[]).length)?`<button class="rpbtn" type="button" data-goto-build>💎 Build</button>`:""}
+        ${GAMES.some(g=>norm(g.champion)===norm(c.name)&&g.opp&&!g.short)?`<button class="rpbtn" type="button" data-goto-mu>⚔️ Matchups</button>`:""}
         ${hasMapGames(c.name)?`<button class="rpbtn" type="button" data-goto-dm>🗺 Carte des morts</button>`:""}
         ${(n=>n?`<button class="rpbtn" type="button" data-goto-rp>▶ ${n>1?"Ses "+n+" parties":"Sa partie"}</button>`:"")(rpCount(c.name))}
         <div class="pos">${i>=0?`${i+1} sur ${list.length} · flèches ← → pour naviguer`:""}</div></div>
@@ -661,6 +724,7 @@ function renderPanel(){
       <div class="box"><h5 class="bad">À travailler</h5>${ul(p.W)}</div>
     </div></div>
     ${p.T.length?`<div class="pb"><h4>Conseils</h4><div class="tips">${p.T.map((t,k)=>`<div class="tip"><b>${k+1}</b><span>${esc(t)}</span></div>`).join("")}</div></div>`:""}
+    ${matchupBlock(c.name)}
     ${champDeathMap(c.name)}
     ${buildBlock(c.name)}
     ${replayBlock(c.name)}`;
@@ -684,6 +748,7 @@ function goTo(id){const go=()=>{const t=$(id);if(t)t.scrollIntoView({block:"star
 document.addEventListener("click",e=>{
   const dmb=e.target.closest("[data-dm]"); if(dmb&&!e.target.closest("#panel")){openPanel(dmb.dataset.dm);goTo("dmSec");return}
   if(e.target.closest("[data-goto-dm]")){goTo("dmSec");return}
+  if(e.target.closest("[data-goto-mu]")){goTo("muSec");return}
   const rpb=e.target.closest("[data-rp]"); if(rpb&&!e.target.closest("#panel")){openPanel(rpb.dataset.rp);const t=$("rpSec");if(t)t.scrollIntoView({block:"start"});return}
   if(e.target.closest("[data-goto-build]")){const t=$("buildSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
   if(e.target.closest("[data-goto-rp]")){const t=$("rpSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
@@ -836,6 +901,132 @@ function champDeathMap(name){
       <p class="rnote">Le détail de chaque mort, avec les flèches et les conseils, est dans « Partie par partie » plus bas.${waiting?` ${waiting} partie${waiting>1?"s":""} encore en cours de récupération.`:""}</p></div></div></div>`;
 }
 </script>
+<script>/* ---------- Icônes de champions (Data Dragon) ---------- */
+const NAME2KEY={};
+function champKey(name){if(!name)return null;if(NAME2KEY[name])return NAME2KEY[name];const n=norm(name);for(const[k,v]of Object.entries(NAME2KEY))if(norm(k)===n)return NAME2KEY[name]=v;return null}
+function crest(name){const k=champKey(name);
+  if(k&&DDV)return `<img class="crest cimg" src="https://ddragon.leagueoflegends.com/cdn/${DDV}/img/champion/${encodeURIComponent(k)}.png" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'crest cfb',textContent:'${esc(String(name).slice(0,2).toUpperCase())}'}))">`;
+  return crestSVG(name)}
+function splashUrl(name){const k=champKey(name);return k?`https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${encodeURIComponent(k)}_0.jpg`:null}
+const ico=(name,cls="ci")=>{const k=champKey(name);return k&&DDV?`<img class="${cls}" src="https://ddragon.leagueoflegends.com/cdn/${DDV}/img/champion/${encodeURIComponent(k)}.png" alt="" loading="lazy">`:`<span class="${cls} cfb">${esc(String(name||"?").slice(0,2).toUpperCase())}</span>`};
+
+/* ---------- Phase de lane ---------- */
+const sgn=(n,d=0)=>(n>0?"+":n<0?"−":"")+Math.abs(n).toFixed(d).replace(".",",");
+const CLSFR={mage:"mage",ench:"enchanteur",tank:"tank / engage",blade:"combattant ou assassin",bow:"tireur"};
+/* plan de jeu par type de champion : comment un pro joue ce duel */
+const MU={
+  mage:{
+    mage:"Duel de portée : le premier qui touche son sort gagne l'échange. Recule derrière tes sbires pour qu'ils bloquent ses sorts, et ne relance un échange que quand son sort principal est en recharge.",
+    ench:"Il soigne et protège mais fait peu de dégâts : pousse-le loin de ses sbires avec tes sorts et vise son tireur, il ne peut pas tout bloquer. Garde ton sort de contrôle pour quand il utilise son bouclier.",
+    tank:"Il veut t'engager : reste derrière tes sbires et hors de portée de son engagement. Dès qu'il rate son engagement ou l'utilise, punis-le avec toute ta combo, il n'a plus rien pour revenir.",
+    blade:"Il gagne s'il arrive au contact. Garde Saut éclair et ton sort de contrôle pour lui uniquement, place-toi près de ta tour et frappe-le de loin quand il vient prendre des sbires.",
+    bow:"Tireur à portée moyenne : harcèle-le quand il s'avance pour tuer un sbire, il ne peut pas répondre en même temps. Évite les longs échanges à l'auto-attaque, il les gagne."
+  },
+  ench:{
+    mage:"Il te harcèle de loin : reste derrière ton tireur, protège-le avec ton bouclier au moment où le sort arrive, et ne gaspille pas tes soins en début de lane.",
+    ench:"Lane calme : celui qui gère le mieux sa vision et son mana gagne. Pose tes balises tôt dans la rivière, et échange quand son soin ou son bouclier vient d'être utilisé.",
+    tank:"Tout le match se joue sur son engagement. Reste à côté de ton tireur, garde ton sort qui annule ou ralentit l'engagement (bouclier, désengagement) pour le moment où il saute, puis contre-attaquez à deux.",
+    blade:"Il va plonger sur ton tireur ou sur toi : reste dans la zone de ta tour quand il est fort, et garde ton bouclier ou ton contrôle pour l'arrêter au moment où il engage.",
+    bow:"Laisse ton tireur farmer et protège-le : chaque fois que le tireur adverse s'avance pour prendre un sbire, touche-le avec une auto-attaque ou un sort, puis recule."
+  },
+  tank:{
+    mage:"Il te harcèle tant que tu n'es pas au contact. Attends qu'il gaspille son sort principal sur un sbire ou sur toi, puis engage : sans ce sort, il ne peut pas te repousser.",
+    ench:"Il annule tes engagements avec ses boucliers et soins : engage quand ses sorts défensifs sont en recharge, ou attends ton jungler pour qu'il ne puisse pas sauver son tireur.",
+    tank:"Duel d'engagements : le premier qui engage mal perd. Laisse-le engager le premier si tu peux, puis réponds par-dessus. Garde un œil sur la mini-carte : les deux junglers viendront.",
+    blade:"Il fait plus de dégâts que toi en duel. Joue pour ton équipe : engage seulement quand ton tireur peut suivre, et garde ton contrôle pour l'arrêter quand il plonge sur lui.",
+    bow:"Le tireur adverse est ta cible : engage-le quand il s'avance pour un sbire ou quand son support est loin, surtout après son Saut éclair."
+  },
+  blade:{
+    mage:"Il te pique de loin : attends qu'il rate ou utilise son sort principal, puis fonce. Achète tôt un peu de résistance magique si les échanges sont trop durs.",
+    ench:"Il te ralentit et protège sa cible : force-le à utiliser ses sorts d'abord, puis engage. Un enchanteur seul est très fragile : profite de ses déplacements en solo.",
+    tank:"Il est solide mais fait peu de dégâts : échange court, une combo puis recule. Ne te bats pas sous sa tour, il te retiendra pendant que sa tour te frappe.",
+    blade:"Duel de puissance : regarde les niveaux. Joue prudemment quand il a un niveau d'avance et cherche le combat quand tu passes niveau 6 avant lui.",
+    bow:"Il est fort de loin, toi au contact : approche par les buissons ou par le côté, garde ton sort de déplacement pour le rattraper, et ne cours pas après lui jusque sous sa tour."
+  },
+  bow:{
+    mage:"Il te harcèle quand tu vas chercher un sbire : laisse ton support se placer devant toi, et ne prends le dernier coup que quand son sort est en recharge.",
+    ench:"Lane d'usure : bats-toi à l'auto-attaque quand son soin ou son bouclier est utilisé, et pousse la vague pour prendre l'avantage en or.",
+    tank:"Tout tourne autour de son engagement : reste derrière tes sbires, hors de sa portée, et garde Saut éclair pour l'esquiver. S'il rate, contre-attaquez à deux.",
+    blade:"Il veut t'atteindre au contact : garde ta distance, recule dès qu'il avance, et ne gaspille pas Saut éclair avant qu'il ait engagé.",
+    bow:"Duel de tireurs : celui qui prend le plus de sbires et touche le plus d'auto-attaques gagne. Échange quand il s'avance pour un sbire, puis recule."
+  }
+};
+const ROLETIP={Support:"En support : pose une balise dans la rivière avant 2 min 30, achète une balise de contrôle à chaque retour, et suis ton tireur quand il retourne en lane.",
+  ADC:"En tireur : chaque sbire compte, vise 70 sbires à 10 minutes, et recule dès que le support adverse disparaît du champ de vision.",
+  Mid:"Au milieu : pousse ta vague avant de bouger pour aider une autre lane, et préviens ton équipe quand ton adversaire disparaît.",
+  Top:"En haut : garde une balise dans la rivière, la lane est longue et le jungler adverse arrive souvent par là.",
+  Jungle:"En jungle : compare tes camps et ceux du jungler adverse, et va aider la lane qui gagne déjà."};
+function laneVerdict(L,role){
+  const a=L.at10; if(!a)return null;
+  const gd=a.g-a.og, xd=a.xp-a.oxp, cd=a.cs-a.ocs, sup=role==="Support";
+  let s=gd/350+xd/450+(sup?0:cd/12)+(L.kOpp-L.dOpp)*0.6+(L.fb||0)*0.3;
+  if(sup&&L.duo10&&L.duo10.g!=null)s+=(L.duo10.g-L.duo10.og)/500;
+  return {score:s,label:s>=1.2?"Lane gagnée":s<=-1.2?"Lane perdue":"Lane équilibrée",cls:s>=1.2?"good":s<=-1.2?"bad":"",gd,xd,cd};
+}
+function laneBlock(g){
+  if(g.mode!=="Faille"||!g.opp)return "";
+  if(!("lane" in g))return `<p class="rnote">Analyse de la phase de lane : en cours de récupération, elle arrivera aux prochaines mises à jour.</p>`;
+  const L=g.lane; if(!L||!L.at10)return "";
+  const v=laneVerdict(L,g.role), a=L.at10, b=L.at15, o=g.opp.champion, sup=g.role==="Support";
+  const mc=champClass(g.champion), oc=champClass(o);
+  const how=[], tile=(val,lab,cls="")=>`<div><b class="${cls}">${val}</b><span>${lab}</span></div>`;
+  const tiles=[tile(sgn(v.gd),"or à 10 min",v.gd>=300?"good":v.gd<=-300?"bad":""),
+    sup?tile(sgn(v.xd),"XP à 10 min",v.xd>=300?"good":v.xd<=-300?"bad":""):tile(sgn(v.cd),"sbires à 10 min",v.cd>=8?"good":v.cd<=-8?"bad":""),
+    tile(`${a.lvl} / ${a.olvl}`,"niveaux à 10 min",a.lvl>a.olvl?"good":a.lvl<a.olvl?"bad":""),
+    b?tile(sgn(b.g-b.og),"or à 15 min",b.g-b.og>=500?"good":b.g-b.og<=-500?"bad":""):tile("–","or à 15 min"),
+    tile(`${L.ek} / ${L.ed}`,"kills / morts avant 14 min",L.ek>L.ed?"good":L.ed>L.ek?"bad":""),
+    tile(L.fb===1?"Oui":L.fb===-1?"Donné":"Non","premier sang",L.fb===1?"good":L.fb===-1?"bad":""),
+    sup?tile(L.wards,"balises avant 14 min",L.wards>=10?"good":L.wards<6?"bad":""):tile(`${L.plates} / ${L.oplates}`,"plaques de tour",L.plates>L.oplates?"good":L.plates<L.oplates?"bad":""),
+    tile(L.ganked,"morts sur un gank",L.ganked?"bad":"good")].join("");
+  // comment il a joué sa lane
+  if(v.gd>=600)how.push(`Grosse avance : ${sgn(v.gd)} PO sur ${o} à 10 minutes.`);
+  else if(v.gd<=-600)how.push(`Gros retard : ${sgn(v.gd)} PO face à ${o} à 10 minutes.`);
+  if(!sup){if(v.cd>=12)how.push(`Très bon farm : ${sgn(v.cd)} sbires de plus que ${o} à 10 minutes.`);else if(v.cd<=-12)how.push(`${Math.abs(v.cd)} sbires de retard à 10 minutes : chaque vague manquée, c'est environ 125 PO perdues.`)}
+  if(L.solo)how.push(`${L.solo} kill${L.solo>1?"s":""} en solo sur ${o} avant 14 minutes : tu as gagné tes duels.`);
+  if(L.soloDeaths)how.push(`Tué ${L.soloDeaths} fois en duel par ${o} avant 14 minutes : ce matchup demande plus de prudence.`);
+  if(L.ganked)how.push(`${L.ganked} mort${L.ganked>1?"s":""} sur un gank avant 14 minutes : le jungler adverse t'a trouvé. Une balise dans la rivière l'aurait montré.`);
+  if(L.fb===1)how.push("Premier sang de la partie pour toi.");else if(L.fb===-1)how.push("Premier sang donné : tout le début de partie part avec un retard.");
+  if(sup&&L.duo10&&L.duo10.g!=null){const dd=L.duo10.g-L.duo10.og;if(dd>=400)how.push(`Ton tireur avait ${sgn(dd)} PO sur le tireur adverse à 10 minutes : bonne lane à deux.`);else if(dd<=-400)how.push(`Ton tireur était à ${sgn(dd)} PO du tireur adverse à 10 minutes : protège-le mieux pendant qu'il prend ses sbires.`)}
+  if(sup&&L.wards<6)how.push(`Seulement ${L.wards} balises posées avant 14 minutes : un support pro en pose plutôt 10 à 15.`);
+  if(!sup&&L.plates>=2)how.push(`${L.plates} plaques de tour prises : tu as transformé ton avance en or.`);
+  if(!how.length)how.push(`Lane serrée contre ${o} : aucun des deux n'a pris un vrai avantage.`);
+  const plan=mc&&oc&&MU[mc]&&MU[mc][oc]?MU[mc][oc]:null;
+  return `<div class="lane"><div class="lane-h">${ico(g.champion,"ci big")}<span class="vsx">VS</span>${ico(o,"ci big")}
+      <div><span class="label">Phase de lane · ${esc(g.role)}</span><b class="lane-v ${v.cls}">${v.label}</b><span class="rnote">${esc(g.champion)} contre ${esc(o)}${mc&&oc?` · ${CLSFR[mc]} contre ${CLSFR[oc]}`:""}</span></div></div>
+    <div class="rtiles">${tiles}</div>
+    <div class="two"><div class="box"><h5>Comment tu as joué la lane</h5><ul>${how.slice(0,5).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div class="box pro"><h5>🎯 Comment un pro joue ce matchup</h5>${plan?`<p>${esc(plan)}</p>`:""}${ROLETIP[g.role]?`<p class="rnote">${esc(ROLETIP[g.role])}</p>`:""}</div></div></div>`;
+}
+/* tableau des matchups d'un champion */
+function matchupBlock(name){
+  const gs=GAMES.filter(g=>norm(g.champion)===norm(name)&&g.mode==="Faille"&&!g.short&&g.opp);
+  if(!gs.length)return "";
+  const by={};for(const g of gs){const o=g.opp.champion;(by[o]??=[]).push(g)}
+  const rows=Object.entries(by).map(([o,a])=>{const L=a.filter(g=>g.lane&&g.lane.at10);const vs=L.map(g=>laneVerdict(g.lane,g.role));
+    return {o,n:a.length,w:a.filter(g=>g.win).length,gd:L.length?L.reduce((s,g)=>s+g.lane.at10.g-g.lane.at10.og,0)/L.length:null,lw:vs.filter(v=>v&&v.score>=1.2).length,ll:vs.filter(v=>v&&v.score<=-1.2).length,nl:L.length}})
+    .sort((a,b)=>b.n-a.n||b.w-a.w);
+  const hard=rows.filter(r=>r.n>=2).sort((a,b)=>(a.w/a.n)-(b.w/b.n)||((a.gd??0)-(b.gd??0)))[0];
+  const easy=rows.filter(r=>r.n>=2).sort((a,b)=>(b.w/b.n)-(a.w/a.n)||((b.gd??0)-(a.gd??0)))[0];
+  const mc=champClass(name), oc=hard?champClass(hard.o):null;
+  return `<div class="pb" id="muSec"><h4>⚔️ Ses matchups avec ${esc(name)} (${gs.length} parties)</h4>
+    ${hard||easy?`<div class="two">${easy&&easy!==hard?`<div class="box"><h5 class="good">Matchup le plus facile</h5><p class="mu1">${ico(easy.o)} <b>${esc(easy.o)}</b> · ${easy.w} victoire${easy.w>1?"s":""} sur ${easy.n}${easy.gd!=null?` · ${sgn(easy.gd)} PO à 10 min en moyenne`:""}</p></div>`:""}
+      ${hard?`<div class="box"><h5 class="bad">Matchup le plus dur</h5><p class="mu1">${ico(hard.o)} <b>${esc(hard.o)}</b> · ${hard.w} victoire${hard.w>1?"s":""} sur ${hard.n}${hard.gd!=null?` · ${sgn(hard.gd)} PO à 10 min en moyenne`:""}</p>${mc&&oc&&MU[mc]?.[oc]?`<p class="rnote">${esc(MU[mc][oc])}</p>`:""}</div>`:""}</div>`:""}
+    <div class="tablewrap2"><table class="vs mut"><thead><tr><th>Contre</th><th>Parties</th><th>Victoires</th><th>Or à 10 min</th><th>Lanes gagnées / perdues</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td><span class="mu1">${ico(r.o)} ${esc(r.o)}</span></td><td>${r.n}</td><td class="${r.w/r.n>=0.6?"good":r.w/r.n<0.4?"bad":""}">${r.w}V ${r.n-r.w}D</td><td class="${r.gd==null?"":r.gd>=300?"good":r.gd<=-300?"bad":""}">${r.gd==null?"–":sgn(r.gd)}</td><td>${r.nl?`<span class="good">${r.lw}</span> / <span class="bad">${r.ll}</span>`:"–"}</td></tr>`).join("")}
+    </tbody></table></div><p class="rnote">« Lane gagnée » : avance nette à 10 minutes en or, XP, sbires et kills contre l'adversaire direct.</p></div>`;
+}
+/* bilan des lanes pour « Ce que montrent ses parties » */
+function laneBilan(gs){
+  const L=gs.filter(g=>g.lane&&g.lane.at10);if(L.length<6)return {good:[],bad:[]};
+  const vs=L.map(g=>laneVerdict(g.lane,g.role)),w=vs.filter(v=>v.score>=1.2).length,l=vs.filter(v=>v.score<=-1.2).length;
+  const gd=L.reduce((s,g)=>s+g.lane.at10.g-g.lane.at10.og,0)/L.length, gk=L.reduce((s,g)=>s+g.lane.ganked,0);
+  const good=[],bad=[];
+  if(w>=l*1.5&&w>=3)good.push({t:"Il gagne souvent sa lane",d:`${w} lanes gagnées pour ${l} perdues sur ${L.length} parties, ${sgn(gd)} PO à 10 minutes en moyenne.`});
+  else if(l>=w*1.5&&l>=3)bad.push({t:"Il perd souvent sa lane",d:`${l} lanes perdues pour ${w} gagnées sur ${L.length} parties, ${sgn(gd)} PO à 10 minutes en moyenne.`});
+  if(gk/L.length>=0.5)bad.push({t:"Souvent tué sur des ganks",d:`${gk} morts sur des ganks avant 14 minutes en ${L.length} parties. Une balise dans la rivière et un œil sur la mini-carte en éviteraient beaucoup.`});
+  return {good,bad};
+}
+</script>
 <script>(function(){
   /* ---------- Source : fichiers data/*.json mis à jour par GitHub Actions ---------- */
   const MODES=[
@@ -966,7 +1157,8 @@ function champDeathMap(name){
     }
     const champs=Object.values(by).map(c=>({name:c.name,games:c.games,wins:c.wins,k:c.k/c.games,d:c.d/c.games,a:c.a/c.games,cspm:c.cs/Math.max(1,c.min),kp:Math.round(c.kp/c.games),last:c.last,recent:[]}));
     const rift=played.filter(g=>g.mode==="Faille").length, aram=played.length-rift;
-    const gb=globalBilan(played,M.id);
+    const gb=globalBilan(played,M.id), lb=laneBilan(played);
+    gb.good=[...lb.good,...gb.good].slice(0,5); gb.bad=[...lb.bad,...gb.bad].slice(0,5);
     RP={sub:`${played.length} partie${played.length>1?"s":""} ${M.short} analysée${played.length>1?"s":""}${M.id==="ranked"||M.id==="rift"?"":""} · chaque partie comparée à son adversaire direct.`,good:gb.good,bad:gb.bad,count:played.length,rift,aram};
     BUILDS=buildsAll.map(b=>b.player&&b.player!==slug?{...b,his:null}:b);
     const [name,tag]=(prof.riotId||"#").split("#");
@@ -999,6 +1191,8 @@ function champDeathMap(name){
       allGames=[];
     } else {
       DDV=prof.ddragon||null;
+      for(const g of prof.games||[])if(g.champKey)NAME2KEY[g.champion]=g.champKey;
+      if(DDV&&!window.__champsLoaded){window.__champsLoaded=true;try{const cj=await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDV}/data/fr_FR/champion.json`).then(r=>r.json());for(const c of Object.values(cj.data))NAME2KEY[c.name]=c.id}catch(e){}}
       allGames=(prof.games||[]).map(g=>{const a=analyseGame(g);return {...g,strengths:a.S,weaknesses:a.W,tips:a.T}});
     }
     pickDefaultMode(); view.f="all"; view.q=""; $("q").value="";
