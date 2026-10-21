@@ -17,7 +17,7 @@ const KEY = process.env.RIOT_API_KEY;
 const RIOT_BASE = process.env.RIOT_BASE; // seulement pour les tests locaux
 const DDRAGON = process.env.DDRAGON_BASE || "https://ddragon.leagueoflegends.com";
 const SCHEMA = 2;
-const MAX_NEW_MATCHES_PER_RUN = Number(process.env.MAX_NEW ?? 120); // par joueur et par exécution
+const REQUEST_BUDGET = Number(process.env.MAX_REQ ?? 170); // requêtes par joueur et par exécution (~3,5 min)
 const MAX_GAMES = 300; // parties gardées par joueur (les plus récentes)
 const MAX_HISTORY = 200;
 
@@ -173,7 +173,62 @@ function summarize(id, m, puuid, S) {
     spells: [S.spells[me.summoner1Id] || "", S.spells[me.summoner2Id] || ""],
     keystone: keystone ? S.runes[keystone] || "" : "",
     opp: oppP ? playerLine(oppP, S) : null,
+    team: me.teamId,
   };
+}
+
+// ---------- Timeline : où et comment il meurt ----------
+// Pour chaque mort : minute, position, tueurs, alliés/ennemis proches (positions relevées
+// chaque minute par Riot, interpolées), niveau, or non dépensé.
+function extractTimeline(tl, m, puuid, S) {
+  const parts = m.info.participants;
+  const me = parts.find((x) => x.puuid === puuid);
+  if (!me || !tl?.info?.frames) return null;
+  const P = {};
+  for (const p of parts) P[p.participantId] = { c: S.champs[p.championName] || p.championName, k: p.championName, team: p.teamId };
+  const frames = tl.info.frames;
+  const posAt = (id, t) => {
+    const i = Math.max(0, Math.min(frames.length - 1, Math.floor(t / 60000)));
+    const a = frames[i]?.participantFrames?.[id]?.position;
+    const b = frames[i + 1]?.participantFrames?.[id]?.position;
+    if (!a) return null;
+    if (!b) return a;
+    const f = Math.max(0, Math.min(1, (t - frames[i].timestamp) / ((frames[i + 1].timestamp - frames[i].timestamp) || 60000)));
+    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+  };
+  const frameAt = (t) => frames[Math.max(0, Math.min(frames.length - 1, Math.floor(t / 60000)))]?.participantFrames || {};
+  const deathsAt = {}; // dernières morts de chaque joueur, pour ignorer ceux qui sont morts à ce moment-là
+  const deaths = [], kills = [];
+  const R = Math.round;
+  for (const fr of frames) for (const ev of fr.events || []) {
+    if (ev.type !== "CHAMPION_KILL" || !ev.position) continue;
+    const t = ev.timestamp;
+    if (ev.killerId === me.participantId) kills.push([R(t / 1000), R(ev.position.x), R(ev.position.y)]);
+    if (ev.victimId === me.participantId) {
+      const inv = [ev.killerId, ...(ev.assistingParticipantIds || [])].filter((id) => P[id] && P[id].team !== me.teamId);
+      const isDead = (id) => deathsAt[id] && t - deathsAt[id] < 25000;
+      const line = (id, pos) => [P[id].c, P[id].k, R(pos.x), R(pos.y)];
+      const by = inv.map((id) => line(id, posAt(id, t) || ev.position));
+      const al = [], en = [];
+      for (const id of Object.keys(P).map(Number)) {
+        if (id === me.participantId || inv.includes(id) || isDead(id)) continue;
+        const pos = posAt(id, t);
+        if (!pos) continue;
+        (P[id].team === me.teamId ? al : en).push(line(id, pos));
+      }
+      const f = frameAt(t);
+      deaths.push({
+        t: R(t / 1000), x: R(ev.position.x), y: R(ev.position.y),
+        by, al, en,
+        lvl: f[me.participantId]?.level ?? null,
+        klvl: P[ev.killerId] ? f[ev.killerId]?.level ?? null : null,
+        gold: f[me.participantId]?.currentGold ?? null,
+        tower: !P[ev.killerId], // tué par une tour / un monstre
+      });
+    }
+    if (ev.victimId) deathsAt[ev.victimId] = t;
+  }
+  return { deaths, kills };
 }
 
 // ---------- Un joueur ----------
@@ -207,16 +262,35 @@ async function updatePlayer(p, S) {
   const skipped = new Set((prev.skipped || []).filter((id) => keepIds.includes(id)));
   const known = new Set([...games.map((g) => g.matchId), ...skipped]);
   const unknown = keepIds.filter((id) => !known.has(id));
-  const todo = unknown.slice(0, MAX_NEW_MATCHES_PER_RUN); // les plus récentes d'abord
-  const pending = unknown.length - todo.length;
-  if (pending > 0) console.log(`  ${pending} parties en attente pour la prochaine fois`);
-
-  let added = 0;
-  for (const id of todo) {
+  // Anciennes parties de la Faille sans timeline : à compléter (les plus récentes d'abord)
+  const upgrade = games.filter((g) => g.mode === "Faille" && !g.deaths).sort((x, y) => y.date.localeCompare(x.date));
+  let budget = REQUEST_BUDGET; // requêtes par joueur et par exécution
+  let added = 0, upgraded = 0, left = 0;
+  const fetchGame = async (id) => {
     const m = await riot(config.region, `/lol/match/v5/matches/${id}`);
+    budget--;
     const g = m && summarize(id, m, puuid, S);
+    if (g && g.mode === "Faille" && budget > 0) {
+      const tl = await riot(config.region, `/lol/match/v5/matches/${id}/timeline`);
+      budget--;
+      const x = tl && extractTimeline(tl, m, puuid, S);
+      if (x) Object.assign(g, x);
+      else if (tl === null) Object.assign(g, { deaths: [], kills: [], noTimeline: true }); // timeline introuvable : on n'insiste pas
+    }
+    return g;
+  };
+  for (const id of unknown) {
+    if (budget < 2) { left++; continue; }
+    const g = await fetchGame(id);
     if (g) { games.push(g); added++; } else skipped.add(id);
   }
+  for (const old of upgrade) {
+    if (budget < 2) { left++; continue; }
+    const g = await fetchGame(old.matchId);
+    if (g) { Object.assign(old, g); upgraded++; }
+  }
+  const pending = left;
+  if (pending > 0) console.log(`  ${pending} parties en attente pour la prochaine fois`);
   games.sort((x, y) => y.date.localeCompare(x.date));
 
   // Historique LP : un point quand le nombre de parties Solo change
@@ -244,7 +318,7 @@ async function updatePlayer(p, S) {
     skipped: [...skipped],
   };
   await writeFile(file, JSON.stringify(out));
-  console.log(`  ${added} nouvelles parties analysées, ${games.length} au total`);
+  console.log(`  ${added} nouvelles parties, ${upgraded} complétées avec la carte des morts, ${games.length} au total`);
 }
 
 await mkdir(DATA, { recursive: true });
