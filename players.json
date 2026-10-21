@@ -1,0 +1,9 @@
+{
+  "platform": "euw1",
+  "region": "europe",
+  "seasonStart": "2026-01-08",
+  "players": [
+    { "slug": "i-hate-him", "gameName": "I HATE HIM", "tagLine": "KEUR" },
+    { "slug": "evanya", "gameName": "EvaNya", "tagLine": "001" }
+  ]
+}
