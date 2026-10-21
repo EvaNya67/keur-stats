@@ -268,6 +268,9 @@ footer.legal{font-size:11px;color:var(--muted);line-height:1.5;max-width:1120px;
 .cleg i{width:12px;height:12px;border-radius:50%;display:inline-block}
 .cleg p{margin:4px 0 0}
 @media (max-width:560px){.cmap{grid-template-columns:1fr}}
+.cbtns{display:flex;flex-wrap:wrap;gap:6px}
+.rpb.dmb{background:color-mix(in srgb,var(--win) 14%,transparent);color:var(--win);border-color:var(--win)}
+.rpb.dmb:hover{background:var(--win);color:var(--bg)}
 </style>
 </head>
 <body>
@@ -520,7 +523,7 @@ function renderGrid(){
     const note=p.W.length&&(p.v==="work"||!p.S.length)?[p.W[0],1]:p.S.length?[p.S[0],0]:p.W.length?[p.W[0],1]:null;
     return `<button class="card" type="button" data-n="${esc(c.name)}">
       <span class="card-top">${crest(c.name)}<span style="min-width:0"><span class="card-name">${esc(c.name)}</span><span class="vchip v-${p.v}">${VL[p.v]}</span></span></span>
-      ${(n=>n?`<span class="rpb" data-rp="${esc(c.name)}" role="link" aria-label="Voir ses ${n} parties sur ${esc(c.name)}">▶ ${n} partie${n>1?"s":""} analysée${n>1?"s":""}</span>`:"")(rpCount(c.name))}
+      <span class="cbtns">${(n=>n?`<span class="rpb" data-rp="${esc(c.name)}" role="link" aria-label="Voir ses ${n} parties sur ${esc(c.name)}">▶ ${n} partie${n>1?"s":""}</span>`:"")(rpCount(c.name))}${hasMapGames(c.name)?`<span class="rpb dmb" data-dm="${esc(c.name)}" role="link" aria-label="Voir la carte des morts sur ${esc(c.name)}">🗺 Carte des morts</span>`:""}</span>
       <span class="card-wr"><b class="${wr>=.6?"good":wr<.45?"bad":""}">${pct(wr)}</b><span>${c.wins}V ${c.games-c.wins}D</span></span>
       <span class="bar"><i style="width:${pct(wr)}"></i></span>
       <span class="card-meta"><span><b>${c.games}</b>parties</span><span><b>${f2(p.kda)}</b>KDA</span><span><b>${f1(c.cspm)}</b>CS/min</span></span>
@@ -620,6 +623,7 @@ function renderPanel(){
     <header class="ph">${crest(c.name)}
       <div style="min-width:0"><span class="label">Fiche champion</span><h3 id="pName">${esc(c.name)}</h3><span class="vchip v-${p.v}">${VL[p.v]}</span>
         ${BUILDS.some(x=>norm(x.name)===norm(c.name))||GAMES.some(g=>norm(g.champion)===norm(c.name)&&(g.items||[]).length)?`<button class="rpbtn" type="button" data-goto-build>💎 Build</button>`:""}
+        ${hasMapGames(c.name)?`<button class="rpbtn" type="button" data-goto-dm>🗺 Carte des morts</button>`:""}
         ${(n=>n?`<button class="rpbtn" type="button" data-goto-rp>▶ ${n>1?"Ses "+n+" parties":"Sa partie"}</button>`:"")(rpCount(c.name))}
         <div class="pos">${i>=0?`${i+1} sur ${list.length} · flèches ← → pour naviguer`:""}</div></div>
       <div class="nav"><button class="icon" type="button" data-go="-1" aria-label="Champion précédent">‹</button><button class="icon" type="button" data-go="1" aria-label="Champion suivant">›</button><button class="icon" type="button" data-close aria-label="Fermer">✕</button></div>
@@ -658,6 +662,8 @@ function step(d){
 
 /* ---------- interactions ---------- */
 document.addEventListener("click",e=>{
+  const dmb=e.target.closest("[data-dm]"); if(dmb&&!e.target.closest("#panel")){openPanel(dmb.dataset.dm);const t=$("dmSec");if(t)t.scrollIntoView({block:"start"});return}
+  if(e.target.closest("[data-goto-dm]")){const t=$("dmSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
   const rpb=e.target.closest("[data-rp]"); if(rpb&&!e.target.closest("#panel")){openPanel(rpb.dataset.rp);const t=$("rpSec");if(t)t.scrollIntoView({block:"start"});return}
   if(e.target.closest("[data-goto-build]")){const t=$("buildSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
   if(e.target.closest("[data-goto-rp]")){const t=$("rpSec");if(t)t.scrollIntoView({block:"start",behavior:"smooth"});return}
@@ -785,24 +791,29 @@ function deathsBlock(g){
       <div class="dtodo"><span>Il aurait fallu</span>${a.todo.map(t=>`<p>${esc(t)}</p>`).join("")}</div></figcaption></figure>`}).join("")}</div></div>`;
 }
 /* carte de toutes les morts d'un champion */
+function hasMapGames(name){return GAMES.some(g=>norm(g.champion)===norm(name)&&g.mode==="Faille"&&!g.short)}
 function champDeathMap(name){
-  const gs=GAMES.filter(g=>norm(g.champion)===norm(name)&&g.deaths&&g.mode==="Faille"&&!g.short);
+  const all=GAMES.filter(g=>norm(g.champion)===norm(name)&&g.mode==="Faille"&&!g.short);
+  if(!all.length)return "";
+  const gs=all.filter(g=>g.deaths);
   const ds=gs.flatMap(g=>g.deaths.map(d=>({...d,team:g.team})));
-  if(!ds.length)return "";
+  const waiting=all.length-gs.length;
+  if(!ds.length)return `<div class="pb" id="dmSec"><h4>Carte des morts</h4><div class="box"><p>${gs.length?"Aucune mort enregistrée sur ce champion.":`La carte des morts de ${esc(name)} est en cours de récupération : elle apparaîtra après la prochaine mise à jour automatique (toutes les heures).`}</p></div></div>`;
   // on ramène tout du point de vue de l'équipe bleue (base en bas à gauche)
   const norm2=d=>d.team===200?[MAPW-d.x,MAPW-d.y]:[d.x,d.y];
   const ks=gs.flatMap(g=>(g.kills||[]).map(k=>g.team===200?[MAPW-k[1],MAPW-k[2]]:[k[1],k[2]]));
   const zones={};for(const d of ds){const z=zoneOf(d.x,d.y,d.team);zones[z]=(zones[z]||0)+1}
   const zs=Object.entries(zones).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([z,n])=>`${Math.round(n/ds.length*100)}% dans ${z}`).join(", ");
   const early=ds.filter(d=>d.t<900).length;
-  return `<div class="pb"><h4>Où il meurt avec ${esc(name)} (${ds.length} morts, ${gs.length} parties)</h4>
+  return `<div class="pb" id="dmSec"><h4>🗺 Carte des morts avec ${esc(name)} (${ds.length} morts, ${gs.length} parties)</h4>
     <div class="cmap"><svg class="dmap" viewBox="0 0 ${MAPW} ${MAPW}" role="img" aria-label="Carte des morts">
       <rect width="${MAPW}" height="${MAPW}" fill="#1b2a2a"/>${DDV?`<image href="https://ddragon.leagueoflegends.com/cdn/${DDV}/img/map/map11.png" width="${MAPW}" height="${MAPW}" preserveAspectRatio="none"/>`:""}
       <rect width="${MAPW}" height="${MAPW}" fill="#000" opacity=".25"/>
       ${ks.map(k=>`<circle cx="${k[0]}" cy="${MAPW-k[1]}" r="190" fill="#3fe0a0" opacity=".75"/>`).join("")}
       ${ds.map(d=>{const p=norm2(d);return `<g opacity=".9"><circle cx="${p[0]}" cy="${MAPW-p[1]}" r="230" fill="#ff5a5a" stroke="#000" stroke-width="40"/></g>`}).join("")}
     </svg><div class="cleg"><span><i style="background:#ff5a5a"></i>ses morts</span><span><i style="background:#3fe0a0"></i>ses kills</span><span class="rnote">vu depuis la base bleue (en bas à gauche)</span>
-      <p>${esc(zs)}. ${early} mort${early>1?"s":""} avant 15 minutes.</p></div></div></div>`;
+      <p>${esc(zs)}. ${early} mort${early>1?"s":""} avant 15 minutes.</p>
+      <p class="rnote">Le détail de chaque mort, avec les flèches et les conseils, est dans « Partie par partie » plus bas.${waiting?` ${waiting} partie${waiting>1?"s":""} encore en cours de récupération.`:""}</p></div></div></div>`;
 }
 </script>
 <script>(function(){
