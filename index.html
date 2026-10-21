@@ -244,6 +244,30 @@ select{font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;border:1
 #players button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .gsw button[hidden]{display:none}
 footer.legal{font-size:11px;color:var(--muted);line-height:1.5;max-width:1120px;margin:-40px auto 0;padding:0 20px 40px}
+
+/* morts sur la carte */
+.deaths{display:grid;gap:10px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.dcard{margin:0;background:var(--raise-2);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:grid;align-content:start}
+.dmap{display:block;width:100%;aspect-ratio:1;background:#1b2a2a}
+.dmap .ring{fill:none;stroke-width:90}
+.dmap .ally .ring{stroke:#4aa3ff}.dmap .enemy .ring{stroke:#ff5a5a}.dmap .me .ring{stroke:#f2c94c;stroke-width:130}
+.dmap .far{opacity:.55}
+.dmap .dot{fill:#555}
+.dmap .x circle{fill:#ff5a5a;stroke:#000;stroke-width:40}.dmap .x path{stroke:#fff;stroke-width:55;stroke-linecap:round}
+.dmap .lbl rect{fill:#0b1a14;stroke:#3fe0a0;stroke-width:50;opacity:.92}.dmap .lbl text{fill:#3fe0a0;font:700 300px var(--body)}
+.dcard figcaption{padding:12px 14px;display:grid;gap:8px;font-size:13.5px}
+.dcard figcaption b{font-size:14px}
+.dtodo{background:color-mix(in srgb,var(--win) 12%,transparent);border-left:3px solid var(--win);border-radius:8px;padding:8px 10px;display:grid;gap:4px}
+.dtodo span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--win);font-weight:700}
+.dtodo p{margin:0}
+.cmap{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px;align-items:start}
+.cmap .dmap{border-radius:14px;border:1px solid var(--line)}
+.cleg{display:grid;gap:6px;font-size:13.5px}
+.cleg span{display:flex;align-items:center;gap:8px}
+.cleg i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.cleg p{margin:4px 0 0}
+@media (max-width:560px){.cmap{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -570,6 +594,7 @@ function replayBlock(name){
       </div>
       ${g.items&&g.items.length?`<div><div class="rnote" style="margin-bottom:6px">Son build en fin de partie</div><div class="ichips">${g.items.map(i=>`<span class="ichip">${esc(i)}</span>`).join("")}</div></div>`:""}
       ${vs}
+      <div class="dslot" data-g="${esc(g.matchId||g.id)}">${i===0?deathsBlock(g):""}</div>
       <div class="two"><div class="box"><h5 class="good">Points forts</h5>${li(g.strengths||[])}</div><div class="box"><h5 class="bad">À travailler</h5>${li(g.weaknesses||[])}</div></div>
       ${(g.tips||[]).length?`<div class="tips">${g.tips.map((t,k)=>`<div class="tip"><b>${k+1}</b><span>${esc(t)}</span></div>`).join("")}</div>`:""}
       <div class="rnote">Partie ${esc(g.id)} · patch ${esc(g.patch)}</div>
@@ -613,6 +638,7 @@ function renderPanel(){
       <div class="box"><h5 class="bad">À travailler</h5>${ul(p.W)}</div>
     </div></div>
     ${p.T.length?`<div class="pb"><h4>Conseils</h4><div class="tips">${p.T.map((t,k)=>`<div class="tip"><b>${k+1}</b><span>${esc(t)}</span></div>`).join("")}</div></div>`:""}
+    ${champDeathMap(c.name)}
     ${buildBlock(c.name)}
     ${replayBlock(c.name)}`;
 }
@@ -641,6 +667,11 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-close]")||e.target.id==="ovBg"){closePanel();return}
   const g=e.target.closest("[data-go]"); if(g)step(+g.dataset.go);
 });
+document.addEventListener("toggle",e=>{
+  const d=e.target; if(!d.classList||!d.classList.contains("rg")||!d.open)return;
+  const slot=d.querySelector(".dslot"); if(!slot||slot.dataset.done)return;
+  const g=GAMES.find(x=>(x.matchId||x.id)===slot.dataset.g); if(g){slot.innerHTML=deathsBlock(g);slot.dataset.done="1"}
+},true);
 document.addEventListener("keydown",e=>{
   if(!$("ov").hidden){
     if(e.key==="Escape")closePanel(); else if(e.key==="ArrowRight")step(1); else if(e.key==="ArrowLeft")step(-1);
@@ -653,6 +684,124 @@ $("q").addEventListener("input",e=>{view.q=e.target.value.trim().toLowerCase();r
 $("sort").addEventListener("change",e=>{view.sort=e.target.value;renderGrid()});
 $("syncBtn").addEventListener("click",async()=>{if(!SRC.sync)return;const b=$("syncBtn");b.disabled=true;b.textContent="Mise à jour…";try{await SRC.sync()}finally{b.disabled=false;b.textContent="Mettre à jour"}});
 function setData(profile,champs){P=profile;CH=champs.filter(c=>c.games>0);AN=analyze(CH);renderAll()}
+</script>
+<script>/* ---------- Morts sur la carte : image + conseil ---------- */
+let DDV=null; // version Data Dragon (images de la carte et des champions)
+const MAPW=14900;
+const TOWERS={100:[[981,10441],[1512,6699],[1169,4287],[5846,6396],[5048,4812],[3651,3696],[10504,1029],[6919,1483],[4281,1253],[1748,2270]],
+              200:[[4318,13875],[7943,13411],[10481,13650],[8955,8510],[9767,10113],[11134,11207],[13866,4505],[13327,8226],[13624,10572],[13052,12612]]};
+const FOUNTAIN={100:[400,400],200:[14400,14400]};
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+const mmssD=s=>`${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`;
+function zoneOf(x,y,team){
+  const blue=team===100, mine=blue?x+y<14200:x+y>15600;
+  if(dist([x,y],FOUNTAIN[100])<3200)return blue?"ta base":"la base adverse";
+  if(dist([x,y],FOUNTAIN[200])<3200)return blue?"la base adverse":"ta base";
+  if(x<2200||y>12700)return "la lane du haut";
+  if(y<2200||x>12700)return "la lane du bas";
+  if(Math.abs(x-y)<1400)return "la lane du milieu";
+  if(Math.abs(x+y-14900)<1500)return "la rivière";
+  return mine?"ta jungle":"la jungle adverse";
+}
+/* positions : un tueur est forcément près de sa victime ; les positions des autres sont relevées chaque minute */
+function nearPoint(from,to,max){const d=dist(from,to);if(d<=max)return to;const f=max/d;return [from[0]+(to[0]-from[0])*f,from[1]+(to[1]-from[1])*f]}
+function adviseDeath(d,g){
+  const P=[d.x,d.y], team=g.team||100, min=d.t/60, z=zoneOf(d.x,d.y,team);
+  const near=(arr,r)=>(arr||[]).filter(a=>dist([a[2],a[3]],P)<r);
+  const allies=near(d.al,2600), enemiesNear=near(d.en,2600);
+  const nEnemy=(d.by||[]).length+enemiesNear.length, nAlly=allies.length+1;
+  const killer=(d.by&&d.by[0])?d.by[0][0]:null;
+  const blue=team===100, enemyHalf=blue?d.x+d.y>15600:d.x+d.y<14200;
+  const why=[], todo=[];
+  let title;
+  if(d.tower&&!killer){title="Tué par une tour ou un monstre";todo.push("Ne plonge pas sous une tour adverse sans qu'un allié prenne les tirs à ta place.")}
+  if(nEnemy>=nAlly+2){title=title||`Combat à ${nAlly} contre ${nEnemy}`;why.push(`${nEnemy} ennemis autour de toi, seulement ${nAlly-1} allié${nAlly-1>1?"s":""} assez près pour aider.`);todo.push("Recule vers tes alliés dès que plusieurs ennemis apparaissent : un combat en infériorité est presque toujours perdu.")}
+  if(allies.length===0&&enemyHalf){title=title||`Seul dans ${z}`;why.push(`Aucun allié à moins de 2 600 unités, dans ${z}.`);todo.push("Dans le camp adverse sans allié, recule : avance seulement avec un coéquipier ou là où tu as posé une balise.")}
+  if((z==="la rivière"||z==="la jungle adverse")&&min<20&&allies.length===0){title=title||`Attrapé dans ${z}`;why.push(`À ${mmssD(d.t)}, le jungler adverse rôde souvent dans ce coin.`);todo.push("Pose une balise avant d'entrer dans la rivière, ou passe par ta propre jungle.")}
+  if(d.lvl&&d.klvl&&d.klvl-d.lvl>=2){title=title||`${killer} avait ${d.klvl-d.lvl} niveaux d'avance`;why.push(`Toi niveau ${d.lvl}, ${killer} niveau ${d.klvl}.`);todo.push("Évite les duels quand tu as 2 niveaux de retard : farme en sécurité et attends ton équipe.")}
+  if(d.gold>=1300){why.push(`Tu avais ${d.gold} PO non dépensées sur toi.`);todo.push(`Retourne à la base acheter avant de te battre : ${d.gold} PO, c'est presque un objet entier.`);title=title||`${d.gold} PO non dépensées`}
+  if(min>=25&&allies.length<=1){title=title||"Mort isolée en fin de partie";why.push("Après 25 minutes, chaque mort dure longtemps.");todo.push("En fin de partie, reste groupé : une mort seule offre le Nashor ou un inhibiteur à l'équipe adverse.")}
+  if(!title&&killer&&(d.by||[]).length===1){title=`Duel perdu contre ${killer}`;todo.push(`Avant d'engager ${killer}, vérifie son niveau, sa vie et ses sorts d'invocateur.`)}
+  if(!title){title=killer?`Tué par ${killer}`:"Mort";todo.push("Garde un œil sur la mini-carte : les ennemis qui disparaissent viennent souvent vers toi.")}
+  why.unshift(`À ${mmssD(d.t)}, dans ${z}${killer?`, tué par ${(d.by||[]).map(b=>b[0]).join(" + ")}`:""}.`);
+  // où il aurait dû aller
+  let target=null,label="Recule ici";
+  const base=FOUNTAIN[team], dB=dist(P,base);
+  const group=(d.al||[]).filter(a=>dist([a[2],a[3]],P)<6000);
+  if(group.length>=2){const c=[group.reduce((s,a)=>s+a[2],0)/group.length,group.reduce((s,a)=>s+a[3],0)/group.length];
+    if(dist(c,base)<dB-500){target=c;label="Rejoins ton équipe"}}
+  if(!target&&dB>3200){const t=(TOWERS[team]||[]).filter(t=>dist(t,base)<dB-800).sort((a,b)=>dist(a,P)-dist(b,P))[0];if(t)target=t}
+  if(target&&dist(target,P)>4500)target=nearPoint(P,target,4500);
+  return {title,why:why.slice(0,4),todo:[...new Set(todo)].slice(0,3),target,label};
+}
+const champImg=k=>DDV&&k?`https://ddragon.leagueoflegends.com/cdn/${DDV}/img/champion/${encodeURIComponent(k)}.png`:"";
+let svgUid=0;
+function deathSVG(d,g,adv){
+  const id="d"+(++svgUid), Y=y=>MAPW-y;
+  // cadrage : la mort, ses tueurs et l'endroit où il aurait dû aller doivent tous être visibles
+  const pts=[[d.x,d.y],...(d.by||[]).map(b=>nearPoint([d.x,d.y],[b[2],b[3]],1700))];
+  if(adv.target)pts.push(adv.target,[adv.target[0],adv.target[1]-1000]);
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>Y(p[1]));
+  const W=Math.min(MAPW,Math.max(6400,Math.max(...xs)-Math.min(...xs)+3200,Math.max(...ys)-Math.min(...ys)+3200));
+  const mx=(Math.max(...xs)+Math.min(...xs))/2, my=(Math.max(...ys)+Math.min(...ys))/2;
+  const cx=Math.max(W/2,Math.min(MAPW-W/2,mx)), cy=Math.max(W/2,Math.min(MAPW-W/2,my));
+  const vb=`${cx-W/2} ${cy-W/2} ${W} ${W}`, P=[d.x,d.y];
+  const icon=(k,x,y,r,cls,ttl)=>`<g class="${cls}"><title>${esc(ttl)}</title><circle cx="${x}" cy="${y}" r="${r+70}" class="ring"/>${k&&DDV?`<image href="${champImg(k)}" x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}" clip-path="url(#${id}c)"/>`:`<circle cx="${x}" cy="${y}" r="${r}" class="dot"/>`}</g>`;
+  const inView=(x,y)=>Math.abs(x-cx)<W/2+400&&Math.abs(Y(y)-cy)<W/2+400;
+  let s=`<svg class="dmap" viewBox="${vb}" role="img" aria-label="${esc(adv.title)}"><defs>
+    <clipPath id="${id}c" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".5"/></clipPath>
+    <marker id="${id}r" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ff5a5a"/></marker>
+    <marker id="${id}g" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3fe0a0"/></marker></defs>
+    <rect x="0" y="0" width="${MAPW}" height="${MAPW}" fill="#1b2a2a"/>
+    ${DDV?`<image href="https://ddragon.leagueoflegends.com/cdn/${DDV}/img/map/map11.png" x="0" y="0" width="${MAPW}" height="${MAPW}" preserveAspectRatio="none"/>`:""}
+    <rect x="0" y="0" width="${MAPW}" height="${MAPW}" fill="#000" opacity=".18"/>`;
+  // alliés et ennemis proches (positions approximatives)
+  for(const a of d.al||[])if(inView(a[2],a[3]))s+=icon(a[1],a[2],Y(a[3]),230,"ally",`${a[0]} (allié)`);
+  for(const e of d.en||[])if(inView(e[2],e[3]))s+=icon(e[1],e[2],Y(e[3]),230,"enemy far",`${e[0]} (ennemi)`);
+  // tueurs : flèches rouges vers lui
+  (d.by||[]).forEach((b,i)=>{let q=nearPoint(P,[b[2],b[3]],1700);if(dist(q,P)<700){const a=(i*2.1+0.6);q=[P[0]+Math.cos(a)*1300,P[1]+Math.sin(a)*1300]}
+    const sx=q[0],sy=Y(q[1]),ex=P[0]+(q[0]-P[0])*0.32,ey=Y(P[1]+(q[1]-P[1])*0.32);
+    s+=`<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="#ff5a5a" stroke-width="95" stroke-linecap="round" marker-end="url(#${id}r)"/>`;
+    s+=icon(b[1],sx,sy,270,"enemy",`${b[0]} (${i?"assistance":"tueur"})`)});
+  // où aller : flèche verte
+  if(adv.target){const [tx,ty]=adv.target;
+    s+=`<line x1="${P[0]}" y1="${Y(P[1])}" x2="${tx}" y2="${Y(ty)}" stroke="#3fe0a0" stroke-width="85" stroke-dasharray="220 150" stroke-linecap="round" marker-end="url(#${id}g)"/>`;
+    const lw=adv.label.length*175+500, lx=Math.max(cx-W/2+lw/2+100,Math.min(cx+W/2-lw/2-100,tx)), ly=Math.min(cy+W/2-650,Y(ty)+300);
+    s+=`<g class="lbl"><rect x="${lx-lw/2}" y="${ly}" width="${lw}" height="520" rx="260"/><text x="${lx}" y="${ly+360}" text-anchor="middle">${esc(adv.label)}</text></g>`}
+  // lui
+  s+=icon(g.champKey,P[0],Y(P[1]),320,"me",`${g.champion} (lui)`);
+  s+=`<g class="x"><circle cx="${P[0]+260}" cy="${Y(P[1])-260}" r="170"/><path d="M${P[0]+190} ${Y(P[1])-330}l140 140M${P[0]+330} ${Y(P[1])-330}l-140 140"/></g>`;
+  return s+`</svg>`;
+}
+function deathsBlock(g){
+  if(g.mode!=="Faille")return "";
+  if(!g.deaths)return `<p class="rnote">Carte des morts : en cours de récupération, elle arrivera aux prochaines mises à jour.</p>`;
+  if(!g.deaths.length)return g.noTimeline?"":`<p class="rnote good">Aucune mort dans cette partie.</p>`;
+  return `<div class="deaths"><div class="rnote" style="margin-bottom:2px">Ses ${g.deaths.length} mort${g.deaths.length>1?"s":""} sur la carte · positions des autres joueurs approximatives (relevées chaque minute)</div>
+    <div class="dgrid">${g.deaths.map((d,i)=>{const a=adviseDeath(d,g);return `<figure class="dcard">${deathSVG(d,g,a)}<figcaption>
+      <b>${i+1}. ${esc(a.title)}</b><ul class="rl">${a.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+      <div class="dtodo"><span>Il aurait fallu</span>${a.todo.map(t=>`<p>${esc(t)}</p>`).join("")}</div></figcaption></figure>`}).join("")}</div></div>`;
+}
+/* carte de toutes les morts d'un champion */
+function champDeathMap(name){
+  const gs=GAMES.filter(g=>norm(g.champion)===norm(name)&&g.deaths&&g.mode==="Faille"&&!g.short);
+  const ds=gs.flatMap(g=>g.deaths.map(d=>({...d,team:g.team})));
+  if(!ds.length)return "";
+  // on ramène tout du point de vue de l'équipe bleue (base en bas à gauche)
+  const norm2=d=>d.team===200?[MAPW-d.x,MAPW-d.y]:[d.x,d.y];
+  const ks=gs.flatMap(g=>(g.kills||[]).map(k=>g.team===200?[MAPW-k[1],MAPW-k[2]]:[k[1],k[2]]));
+  const zones={};for(const d of ds){const z=zoneOf(d.x,d.y,d.team);zones[z]=(zones[z]||0)+1}
+  const zs=Object.entries(zones).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([z,n])=>`${Math.round(n/ds.length*100)}% dans ${z}`).join(", ");
+  const early=ds.filter(d=>d.t<900).length;
+  return `<div class="pb"><h4>Où il meurt avec ${esc(name)} (${ds.length} morts, ${gs.length} parties)</h4>
+    <div class="cmap"><svg class="dmap" viewBox="0 0 ${MAPW} ${MAPW}" role="img" aria-label="Carte des morts">
+      <rect width="${MAPW}" height="${MAPW}" fill="#1b2a2a"/>${DDV?`<image href="https://ddragon.leagueoflegends.com/cdn/${DDV}/img/map/map11.png" width="${MAPW}" height="${MAPW}" preserveAspectRatio="none"/>`:""}
+      <rect width="${MAPW}" height="${MAPW}" fill="#000" opacity=".25"/>
+      ${ks.map(k=>`<circle cx="${k[0]}" cy="${MAPW-k[1]}" r="190" fill="#3fe0a0" opacity=".75"/>`).join("")}
+      ${ds.map(d=>{const p=norm2(d);return `<g opacity=".9"><circle cx="${p[0]}" cy="${MAPW-p[1]}" r="230" fill="#ff5a5a" stroke="#000" stroke-width="40"/></g>`}).join("")}
+    </svg><div class="cleg"><span><i style="background:#ff5a5a"></i>ses morts</span><span><i style="background:#3fe0a0"></i>ses kills</span><span class="rnote">vu depuis la base bleue (en bas à gauche)</span>
+      <p>${esc(zs)}. ${early} mort${early>1?"s":""} avant 15 minutes.</p></div></div></div>`;
+}
 </script>
 <script>(function(){
   /* ---------- Source : fichiers data/*.json mis à jour par GitHub Actions ---------- */
@@ -745,6 +894,18 @@ function setData(profile,champs){P=profile;CH=champs.filter(c=>c.games>0);AN=ana
       if(best)good.push({t:`Solide en ${best.r}`,d:`${best.w} victoires sur ${best.n}, avec ${fr(best.d.toFixed(1))} morts par partie.`});
       if(worst)bad.push({t:`Difficile en ${worst.r}`,d:`${worst.w} victoire${worst.w>1?"s":""} sur ${worst.n} à ce poste.`});
     }
+    const DS=gs.filter(g=>g.deaths&&g.mode==="Faille").flatMap(g=>g.deaths.map(x=>({...x,g})));
+    if(DS.length>=8){
+      const risky=DS.filter(x=>{const z=zoneOf(x.x,x.y,x.g.team||100);return z==="la rivière"||z==="la jungle adverse"}).length;
+      const alone=DS.filter(x=>!(x.al||[]).some(a=>Math.hypot(a[2]-x.x,a[3]-x.y)<2600)).length;
+      const outn=DS.filter(x=>{const ne=(x.by||[]).length+(x.en||[]).filter(a=>Math.hypot(a[2]-x.x,a[3]-x.y)<2600).length,na=1+(x.al||[]).filter(a=>Math.hypot(a[2]-x.x,a[3]-x.y)<2600).length;return ne>=na+2}).length;
+      const rich=DS.filter(x=>x.gold>=1300).length;
+      if(risky/DS.length>=0.3)bad.push({t:"Il meurt souvent dans la rivière ou la jungle adverse",d:`${p0(risky/DS.length*100)}% de ses morts (${risky} sur ${DS.length}). Une balise avant d'y entrer, ou y aller avec son jungler, en éviterait beaucoup.`});
+      if(alone/DS.length>=0.45)bad.push({t:"Il meurt souvent seul",d:`${p0(alone/DS.length*100)}% de ses morts sans aucun allié à proximité.`});
+      if(outn/DS.length>=0.35)bad.push({t:"Combats en infériorité",d:`${p0(outn/DS.length*100)}% de ses morts arrivent à 2 ennemis de plus que son camp ou davantage.`});
+      if(rich/DS.length>=0.25)bad.push({t:"Il meurt avec de l'or en poche",d:`${rich} morts avec plus de 1 300 PO non dépensées : rentrer acheter avant le combat l'aurait rendu plus fort.`});
+      if(alone/DS.length<0.25&&risky/DS.length<0.15)good.push({t:"Il meurt rarement bêtement",d:"Peu de morts seul ou dans la jungle adverse : ses morts arrivent surtout pendant les combats d'équipe."});
+    }
     const dp=avg(gs,g=>g.deadPct);
     if(dp>=(mode==="aram"?22:15))bad.push({t:"Trop de temps passé mort",d:`${p0(dp)}% de la partie passée mort en moyenne. Chaque mort, c'est de l'or et des objectifs perdus.`});
     else if(dp<=(mode==="aram"?12:7))good.push({t:"Il reste en vie",d:`Seulement ${p0(dp)}% de la partie passée mort en moyenne.`});
@@ -753,7 +914,7 @@ function setData(profile,champs){P=profile;CH=champs.filter(c=>c.games>0);AN=ana
       if(kp>=56)good.push({t:"Toujours dans l'action",d:`${p0(kp)}% de participation aux kills en moyenne.`});
       else if(kp<42)bad.push({t:"Trop loin des combats",d:`${p0(kp)}% de participation aux kills en moyenne : rejoins ton équipe autour des objectifs.`});
     }
-    return {good:good.slice(0,4),bad:bad.slice(0,4)};
+    return {good:good.slice(0,4),bad:bad.slice(0,5)};
   }
 
   /* ---------- assemblage ---------- */
@@ -777,7 +938,7 @@ function setData(profile,champs){P=profile;CH=champs.filter(c=>c.games>0);AN=ana
     BUILDS=buildsAll.map(b=>b.player&&b.player!==slug?{...b,his:null}:b);
     const [name,tag]=(prof.riotId||"#").split("#");
     const fresh=(Date.now()-new Date(prof.updatedAt))<3*3600e3;
-    SRC.foot=`Mise à jour automatique toutes les heures avec l'API officielle de Riot (parties depuis le début de la saison, ${allGames.length} parties enregistrées).${prof.pending?` ${prof.pending} parties plus anciennes arrivent aux prochaines mises à jour.`:""} Les points forts, défauts et conseils sont calculés à partir des stats de chaque partie, comparées à ta moyenne et à ton adversaire direct.`;
+    SRC.foot=`Mise à jour automatique toutes les heures avec l'API officielle de Riot (parties depuis le début de la saison, ${allGames.length} parties enregistrées).${prof.pending?` ${prof.pending} parties encore en cours d'analyse : elles arrivent aux prochaines mises à jour.`:""} Les points forts, défauts et conseils sont calculés à partir des stats de chaque partie, comparées à ta moyenne et à ton adversaire direct.`;
     SRC.emptyText=allGames.length?`Aucune partie ${M.short} pour l'instant : essaie un autre type de partie.`:"Tes champions apparaîtront ici dès la première mise à jour.";
     $("gridSub").textContent="Clique sur un champion pour ouvrir sa fiche, son build et l'analyse de chaque partie.";
     setData({name,tag,sub:`${prof.region||"EUW"} · Saison ${new Date().getFullYear()}`,solo:rk(prof.solo),flex:rk(prof.flex),
@@ -804,6 +965,7 @@ function setData(profile,champs){P=profile;CH=champs.filter(c=>c.games>0);AN=ana
       prof={riotId:pl.riotId,updatedAt:new Date().toISOString(),games:[],history:[]};
       allGames=[];
     } else {
+      DDV=prof.ddragon||null;
       allGames=(prof.games||[]).map(g=>{const a=analyseGame(g);return {...g,strengths:a.S,weaknesses:a.W,tips:a.T}});
     }
     pickDefaultMode(); view.f="all"; view.q=""; $("q").value="";
