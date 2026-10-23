@@ -332,6 +332,18 @@ h2::before{content:"";width:6px;height:22px;border-radius:3px;background:linear-
 .bcol h3::before{box-shadow:0 0 10px var(--win)}.bcol.w h3::before{box-shadow:0 0 10px var(--loss)}
 .rg.w{border-left-color:var(--win)}.rg{border-left-color:var(--loss)}
 .btn{border-color:var(--cyan);color:var(--cyan)}.btn:hover{background:var(--cyan-soft)}
+/* mise à jour en un clic */
+.pill.run i{background:var(--gold);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.btn:disabled{opacity:.6;cursor:wait}
+.sync-setup{margin-top:14px;padding:16px 18px;border-radius:14px;border:1px solid color-mix(in srgb,var(--cyan) 45%,var(--line));background:linear-gradient(135deg,var(--cyan-soft),transparent 70%),var(--raise);display:grid;gap:10px;max-width:640px;margin-left:auto}
+.sync-setup h3{margin:0;font:700 16px var(--display);color:var(--fg)}
+.sync-setup ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px;color:var(--muted)}
+.sync-setup ol b{color:var(--fg)}
+.sync-setup .row{display:flex;gap:8px;flex-wrap:wrap}
+.sync-setup input{flex:1;min-width:200px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:500 13px "JetBrains Mono",monospace}
+.sync-setup .err{color:var(--loss);font-size:13px;margin:0}
+.sync-setup a{color:var(--cyan)}
 /* icônes dans le texte */
 .ci{width:24px;height:24px;border-radius:7px;vertical-align:middle;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
 .ci.sm{width:20px;height:20px;border-radius:6px}
@@ -361,9 +373,23 @@ h2::before{content:"";width:6px;height:22px;border-radius:3px;background:linear-
     </div>
     <div class="status">
       <span class="pill" id="pill"><i></i><span id="pillTxt">Chargement…</span></span>
-      <button class="btn" id="syncBtn" type="button" title="Ouvre GitHub : bouton « Run workflow » pour actualiser tout de suite" hidden>Mettre à jour</button>
+      <button class="btn" id="syncBtn" type="button" title="Récupère ses dernières parties tout de suite" hidden>Mettre à jour</button>
     </div>
   </header>
+  <div class="sync-setup" id="syncSetup" hidden>
+    <h3>⚡ Activer la mise à jour en un clic</h3>
+    <p class="rnote" style="margin:0">À faire une seule fois sur ton appareil. Le site a besoin d'un jeton GitHub qui sert uniquement à lancer la mise à jour. Il reste enregistré dans ce navigateur et n'est jamais mis en ligne.</p>
+    <ol>
+      <li>Ouvre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">la page de création de jeton GitHub</a>.</li>
+      <li><b>Token name</b> : keur-stats · <b>Expiration</b> : comme tu veux.</li>
+      <li><b>Repository access</b> : « Only select repositories » → <b>keur-stats</b>.</li>
+      <li><b>Permissions</b> → Add permissions → <b>Actions</b> → « Read and write ». Rien d'autre.</li>
+      <li><b>Generate token</b>, copie-le et colle-le ci-dessous.</li>
+    </ol>
+    <div class="row"><input id="syncTok" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" aria-label="Jeton GitHub"><button class="btn" id="syncSave" type="button">Enregistrer et mettre à jour</button></div>
+    <p class="err" id="syncErr" hidden></p>
+    <p class="rnote" style="margin:0">Pas le propriétaire du site ? <a href="https://github.com/EvaNya67/keur-stats/actions/workflows/update.yml" target="_blank" rel="noopener">Ouvrir GitHub</a> · <a href="#" id="syncClose">Fermer</a></p>
+  </div>
 
   <section class="sec" aria-labelledby="t-over">
     <h2 id="t-over" hidden>Aperçu</h2>
@@ -1177,7 +1203,51 @@ function laneBilan(gs){
   }
   SRC.setMode=m=>{SRC.mode=m;view.f="all";push()};
   SRC.canSync=true;
-  SRC.sync=async()=>{window.open(ACTIONS,"_blank","noopener")};
+  /* ---------- Mise à jour en un clic : lance le workflow GitHub avec le jeton enregistré dans ce navigateur ---------- */
+  const REPO="EvaNya67/keur-stats", TKEY="keurGhToken";
+  const tokGet=()=>{try{return localStorage.getItem(TKEY)}catch(e){return null}};
+  const tokSet=v=>{try{v?localStorage.setItem(TKEY,v):localStorage.removeItem(TKEY)}catch(e){}};
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  const mmss=ms=>{const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+  function setupShow(err){const p=$("syncSetup");p.hidden=false;$("syncErr").hidden=!err;$("syncErr").textContent=err||"";$("syncTok").value="";setTimeout(()=>$("syncTok").focus(),50)}
+  $("syncClose").addEventListener("click",e=>{e.preventDefault();$("syncSetup").hidden=true});
+  $("syncSave").addEventListener("click",()=>{const v=$("syncTok").value.trim();if(!/^(github_pat_|ghp_)\w{20,}$/.test(v)){$("syncErr").hidden=false;$("syncErr").textContent="Ce n'est pas un jeton GitHub valide (il commence par github_pat_).";return}
+    tokSet(v);$("syncSetup").hidden=true;$("syncBtn").click()});
+  function pill(txt,state){$("pillTxt").textContent=txt;$("pill").classList.toggle("run",state==="run");$("pill").classList.toggle("on",state==="ok")}
+  SRC.sync=async()=>{
+    const tok=tokGet(); if(!tok){setupShow();return}
+    const api=(path,o={})=>fetch(`https://api.github.com/repos/${REPO}${path}`,{...o,headers:{Authorization:`Bearer ${tok}`,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}});
+    const bad=()=>{tokSet(null);setupShow("GitHub a refusé le jeton (expiré, supprimé, ou sans la permission « Actions : Read and write » sur keur-stats). Crée-en un nouveau.")};
+    const latest=async()=>{const r=await api("/actions/workflows/update.yml/runs?per_page=1");if(r.status===401)return "bad";if(!r.ok)return null;return (await r.json()).workflow_runs?.[0]||null};
+    try{
+      const t0=Date.now(), was=prof&&prof.updatedAt;
+      let run=await latest(); if(run==="bad"){bad();return}
+      if(!run||run.status==="completed"){
+        const r=await api("/actions/workflows/update.yml/dispatches",{method:"POST",body:JSON.stringify({ref:"main"})});
+        if(r.status===401||r.status===403||r.status===404){bad();return}
+        if(!r.ok)throw new Error("HTTP "+r.status);
+      }
+      pill("Mise à jour lancée…","run");
+      let done=false, failed=false;
+      while(Date.now()-t0<20*60e3){
+        await sleep(8000);
+        run=await latest(); if(run==="bad"){bad();return}
+        const mine=run&&new Date(run.created_at).getTime()>t0-90e3;
+        if(mine&&run.status==="completed"){if(run.conclusion!=="success")failed=true;else done=true;break}
+        pill(`${mine&&run.status==="in_progress"?"Récupération des parties":"Mise à jour en attente"}… ${mmss(Date.now()-t0)}`,"run");
+        $("syncBtn").textContent="Mise à jour… "+mmss(Date.now()-t0);
+      }
+      if(failed){pill("La mise à jour a échoué : réessaie plus tard","");return}
+      if(!done){pill("Toujours en cours : recharge la page dans quelques minutes","");return}
+      // le site met environ une minute à publier les nouvelles données
+      pill("Publication des nouvelles données…","run");
+      for(let i=0;i<30;i++){
+        try{const p=await fetchJSON(`data/${slug}.json`);if(!was||p.updatedAt!==was){$("pill").classList.remove("run");await select(slug);return}}catch(e){}
+        await sleep(6000);
+      }
+      pill("Données prêtes : recharge la page (Ctrl+F5)","ok");
+    }catch(e){pill("Impossible de joindre GitHub : réessaie","")}
+  };
 
   async function select(s){
     slug=s;
