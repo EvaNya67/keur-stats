@@ -307,16 +307,18 @@ async function updatePlayer(p, S) {
   }
   const keepIds = allIds.slice(0, MAX_GAMES);
   const games = (prev.games || []).filter((g) => keepIds.includes(g.matchId));
-  const skipped = new Set((prev.queuesV === QV ? prev.skipped || [] : []).filter((id) => keepIds.includes(id)));
+  const skipped = new Set((prev.queuesV === QV && prev.skipQ ? prev.skipped || [] : []).filter((id) => keepIds.includes(id)));
   const known = new Set([...games.map((g) => g.matchId), ...skipped]);
   const unknown = keepIds.filter((id) => !known.has(id));
   // Anciennes parties de la Faille sans timeline : à compléter (les plus récentes d'abord)
   const upgrade = games.filter((g) => g.mode === "Faille" && !g.noTimeline && (!g.deaths || !("lane" in g))).sort((x, y) => y.date.localeCompare(x.date));
   let budget = REQUEST_BUDGET; // requêtes par joueur et par exécution
-  let added = 0, upgraded = 0, left = 0;
+  let added = 0, upgraded = 0, left = 0, lastQ = null;
+  const skipQ = { ...(prev.queuesV === QV && prev.skipQ ? prev.skipQ : {}) }; // file de chaque partie ignorée (pour vérifier)
   const fetchGame = async (id) => {
     const m = await riot(config.region, `/lol/match/v5/matches/${id}`);
     budget--;
+    lastQ = m?.info?.queueId ?? null;
     const g = m && summarize(id, m, puuid, S);
     if (g && g.mode === "Faille" && budget > 0) {
       const tl = await riot(config.region, `/lol/match/v5/matches/${id}/timeline`);
@@ -330,7 +332,7 @@ async function updatePlayer(p, S) {
   for (const id of unknown) {
     if (budget < 2) { left++; continue; }
     const g = await fetchGame(id);
-    if (g) { games.push(g); added++; } else skipped.add(id);
+    if (g) { games.push(g); added++; } else { skipped.add(id); skipQ[id] = lastQ; }
   }
   for (const old of upgrade) {
     if (budget < 2) { left++; continue; }
@@ -365,6 +367,7 @@ async function updatePlayer(p, S) {
     games,
     skipped: [...skipped],
     queuesV: QV,
+    skipQ: Object.fromEntries(Object.entries(skipQ).filter(([id]) => skipped.has(id))),
   };
   await writeFile(file, JSON.stringify(out));
   console.log(`  ${added} nouvelles parties, ${upgraded} complétées avec la carte des morts, ${games.length} au total`);
