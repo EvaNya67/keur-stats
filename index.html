@@ -663,7 +663,7 @@ function replayBlock(name){
     return `<details class="rg ${g.win?"w":""}"${i===0?" open":""}><summary>
       <span class="res ${g.win?"good":"bad"}">${g.short?"Écourtée":g.win?"Victoire":"Défaite"}</span>
       <span class="kd">${g.k} / ${g.d} / ${g.a}${o?` <span class="rnote vsi">contre ${ico(o.champion,"ci sm")} ${esc(o.champion)}</span>`:""}</span>
-      <span class="meta">${g.date?esc(new Date(g.date).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short",timeZone:"Europe/Paris"}))+" · ":""}${esc(g.mode==="ARAM"?"ARAM":g.role+" · "+(g.queueLabel||"Faille"))} · ${String(g.duration).replace(".",",")} min · ${esc((g.spells||[]).filter(Boolean).join(" + "))}${g.keystone?" · "+esc(g.keystone):""}</span>
+      <span class="meta">${g.date?esc(new Date(g.date).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short",timeZone:"Europe/Paris"}))+" · ":""}${esc(g.mode==="ARAM"?(g.queueLabel||"ARAM"):g.role+" · "+(g.queueLabel||"Faille"))} · ${String(g.duration).replace(".",",")} min · ${esc((g.spells||[]).filter(Boolean).join(" + "))}${g.keystone?" · "+esc(g.keystone):""}</span>
     </summary><div class="rg-body">
       <div class="rtiles">
         <div><b>${g.kp}%</b><span>part. aux kills</span></div>
@@ -1032,7 +1032,8 @@ function laneBilan(gs){
   const MODES=[
     {id:"ranked",label:"Classées",short:"classées",test:g=>g.ranked},
     {id:"rift",label:"Toutes · Faille",short:"sur la Faille",test:g=>g.mode==="Faille"},
-    {id:"aram",label:"ARAM",short:"en ARAM",test:g=>g.mode==="ARAM"}
+    {id:"aram",label:"ARAM",short:"en ARAM",test:g=>g.mode==="ARAM"},
+    {id:"chaos",label:"ARAM : Chaos",short:"en ARAM : Chaos",test:g=>g.queue===2400,opt:true}
   ];
   const ACTIONS="https://github.com/EvaNya67/keur-stats/actions/workflows/update.yml";
   const TIER_FR={IRON:"Fer",BRONZE:"Bronze",SILVER:"Argent",GOLD:"Or",PLATINUM:"Platine",EMERALD:"Émeraude",DIAMOND:"Diamant",MASTER:"Maître",GRANDMASTER:"Grand Maître",CHALLENGER:"Challenger"};
@@ -1170,6 +1171,7 @@ function laneBilan(gs){
       history:(prof.history||[]).map(h=>h.score),status:{ok:fresh,text:`Mis à jour ${ago(prof.updatedAt)}`}},champs);
   }
   function pickDefaultMode(){
+    SRC.modes=MODES.filter(m=>!m.opt||allGames.some(g=>m.test(g))).map(m=>m.label);
     const m=MODES.find(m=>allGames.some(g=>m.test(g)&&!g.short));
     SRC.mode=(m||MODES[0]).label;
   }
