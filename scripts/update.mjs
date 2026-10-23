@@ -30,7 +30,9 @@ const QUEUES = {
   490: { mode: "Faille", label: "Partie rapide" },
   480: { mode: "Faille", label: "Partie rapide" },
   450: { mode: "ARAM", label: "ARAM" },
+  2400: { mode: "ARAM", label: "ARAM : Chaos" },
 };
+const QV = Object.keys(QUEUES).join(","); // si la liste change, on revérifie les parties ignorées
 const ROLE = { TOP: "Top", JUNGLE: "Jungle", MIDDLE: "Mid", BOTTOM: "ADC", UTILITY: "Support" };
 
 if (!KEY) {
@@ -305,7 +307,7 @@ async function updatePlayer(p, S) {
   }
   const keepIds = allIds.slice(0, MAX_GAMES);
   const games = (prev.games || []).filter((g) => keepIds.includes(g.matchId));
-  const skipped = new Set((prev.skipped || []).filter((id) => keepIds.includes(id)));
+  const skipped = new Set((prev.queuesV === QV ? prev.skipped || [] : []).filter((id) => keepIds.includes(id)));
   const known = new Set([...games.map((g) => g.matchId), ...skipped]);
   const unknown = keepIds.filter((id) => !known.has(id));
   // Anciennes parties de la Faille sans timeline : à compléter (les plus récentes d'abord)
@@ -362,6 +364,7 @@ async function updatePlayer(p, S) {
     pending,
     games,
     skipped: [...skipped],
+    queuesV: QV,
   };
   await writeFile(file, JSON.stringify(out));
   console.log(`  ${added} nouvelles parties, ${upgraded} complétées avec la carte des morts, ${games.length} au total`);
