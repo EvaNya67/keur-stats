@@ -85,6 +85,11 @@ async function loadStatic() {
     for (const [id, i] of Object.entries(it.data)) out.items[id] = { name: i.name, boots: (i.tags || []).includes("Boots"), cheap: (i.gold?.total ?? 0) < 900 };
     for (const s of Object.values(su.data)) out.spells[s.key] = s.name;
     for (const tree of ru) for (const slot of tree.slots) for (const r of slot.runes) out.runes[r.id] = r.name;
+    // noms français des sorts de chaque champion (pour les conseils de la page)
+    try {
+      const full = await get(`/cdn/${v}/data/fr_FR/championFull.json`);
+      out.kits = Object.fromEntries(Object.values(full.data).map((c) => [c.id, c.spells.map((x) => x.name)]));
+    } catch (e) {}
   } catch (e) {
     console.log("Data Dragon indisponible, noms bruts utilisés.");
   }
@@ -230,7 +235,23 @@ function extractTimeline(tl, m, puuid, S) {
     }
     if (ev.victimId) deathsAt[ev.victimId] = t;
   }
-  return { deaths, kills, lane: laneStats(frames, parts, me) };
+  // contexte de chaque mort : le combat autour (kills des deux côtés) et les objectifs pris juste après
+  const allKills = [], objs = [];
+  const OBJ = { DRAGON: "Dragon", BARON_NASHOR: "Nashor", RIFTHERALD: "Héraut", HORDE: "Larves du Néant", ATAKHAN: "Atakhan" };
+  for (const fr of frames) for (const ev of fr.events || []) {
+    if (ev.type === "CHAMPION_KILL" && ev.position && P[ev.victimId]) allKills.push({ t: ev.timestamp, x: ev.position.x, y: ev.position.y, mine: P[ev.victimId].team === me.teamId, v: ev.victimId });
+    if (ev.type === "ELITE_MONSTER_KILL" && OBJ[ev.monsterType]) objs.push({ t: ev.timestamp, n: OBJ[ev.monsterType], us: ev.killerTeamId === me.teamId });
+    if (ev.type === "BUILDING_KILL") objs.push({ t: ev.timestamp, n: ev.buildingType === "INHIBITOR_BUILDING" ? "Inhibiteur" : "Tour", us: ev.teamId !== me.teamId });
+  }
+  for (const d of deaths) {
+    const t = d.t * 1000, near = (k) => Math.hypot(k.x - d.x, k.y - d.y) < 3800 && k.t >= t - 15000 && k.t <= t + 15000;
+    d.ak = allKills.filter((k) => !k.mine && near(k)).length; // ennemis tués par son équipe dans ce combat
+    d.ek = allKills.filter((k) => k.mine && k.v !== me.participantId && near(k)).length; // alliés morts avec lui
+    d.obj = objs.filter((o) => o.t >= t - 5000 && o.t <= t + 60000).map((o) => [o.n, o.us ? 1 : 0, R((o.t - t) / 1000)]);
+    // d'où venaient ses tueurs : leur position 20 s avant
+    d.from = d.by.map((b) => { const id = Object.keys(P).map(Number).find((i) => P[i].k === b[1] && P[i].team !== me.teamId); const q = id && posAt(id, Math.max(0, t - 20000)); return q ? [R(q.x), R(q.y)] : null; });
+  }
+  return { deaths, kills, lane: laneStats(frames, parts, me), dv: 2 };
 }
 
 // ---------- Phase de lane : lui contre son adversaire direct ----------
@@ -311,7 +332,7 @@ async function updatePlayer(p, S) {
   const known = new Set([...games.map((g) => g.matchId), ...skipped]);
   const unknown = keepIds.filter((id) => !known.has(id));
   // Anciennes parties de la Faille sans timeline : à compléter (les plus récentes d'abord)
-  const upgrade = games.filter((g) => g.mode === "Faille" && !g.noTimeline && (!g.deaths || !("lane" in g))).sort((x, y) => y.date.localeCompare(x.date));
+  const upgrade = games.filter((g) => g.mode === "Faille" && !g.noTimeline && (!g.deaths || !("lane" in g) || g.dv !== 2)).sort((x, y) => y.date.localeCompare(x.date));
   let budget = REQUEST_BUDGET; // requêtes par joueur et par exécution
   let added = 0, upgraded = 0, left = 0, lastQ = null;
   const skipQ = { ...(prev.queuesV === QV && prev.skipQ ? prev.skipQ : {}) }; // file de chaque partie ignorée (pour vérifier)
@@ -375,6 +396,7 @@ async function updatePlayer(p, S) {
 
 await mkdir(DATA, { recursive: true });
 const S = await loadStatic();
+if (S.kits) await writeFile(path.join(DATA, "spells.json"), JSON.stringify(S.kits));
 let failed = 0;
 for (const p of config.players) {
   try {
