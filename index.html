@@ -261,6 +261,9 @@ footer.legal{font-size:11px;color:var(--muted);line-height:1.5;max-width:1120px;
 .dtodo{background:color-mix(in srgb,var(--win) 12%,transparent);border-left:3px solid var(--win);border-radius:8px;padding:8px 10px;display:grid;gap:4px}
 .dtodo span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--win);font-weight:700}
 .dtodo p{margin:0}
+.dtodo.ok{background:color-mix(in srgb,var(--cyan) 12%,transparent);border-left-color:var(--cyan)}.dtodo.ok span{color:var(--cyan)}
+.dmap .ward .wglow{fill:rgba(255,214,90,.25);stroke:#ffd65a;stroke-width:45}.dmap .ward .wbody{fill:#ffd65a}.dmap .ward .weye{fill:#3a2a00}
+.dmap .lbl.wl rect{stroke:#ffd65a;fill:#1f1a08}.dmap .lbl.wl text{fill:#ffd65a}
 .cmap{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px;align-items:start}
 .cmap .dmap{border-radius:14px;border:1px solid var(--line)}
 .cleg{display:grid;gap:6px;font-size:13.5px}
@@ -822,36 +825,153 @@ function zoneOf(x,y,team){
 }
 /* positions : un tueur est forcément près de sa victime ; les positions des autres sont relevées chaque minute */
 function nearPoint(from,to,max){const d=dist(from,to);if(d<=max)return to;const f=max/d;return [from[0]+(to[0]-from[0])*f,from[1]+(to[1]-from[1])*f]}
+let SPELLS={};
+/* {Q} {W} {E} {R} = noms français des sorts (data/spells.json) */
+const KIT={
+  Rakan:{eng:1,esc:"Garde {E} pour fuir : tu peux sauter vers un allié même assez loin, puis relancer {E} pour repartir. {R} te donne une grosse vitesse : traverse-les au lieu de reculer en ligne droite.",worth:"À plusieurs sur toi, lance {R} et passe sur chacun d'eux : chaque ennemi touché est charmé. Ça donne 1 à 2 secondes à ton équipe pour arriver ou à ton tireur pour s'enfuir.",pos:"N'utilise jamais {W} et {E} pour engager en même temps : sans {E}, tu n'as plus de sortie."},
+  Lux:{esc:"Tu n'as que Saut éclair pour fuir. Ton {Q} doit servir à bloquer le premier qui arrive sur toi, pas à harceler.",worth:"Lance {Q} sur celui qui plonge le premier, ton {W} sur toi au moment des dégâts, puis {R} sur le carry le plus bas : un kill ou deux sorts d'invocateur utilisés, ce n'est pas une mort gratuite.",pos:"Lux est fragile : reste à la portée max de ton {E}, derrière ton tireur."},
+  Syndra:{esc:"{E} repousse ceux qui arrivent sur toi : garde-le pour le premier qui engage, puis Saut éclair.",worth:"Quand ils sont groupés sur toi, {E} peut étourdir plusieurs ennemis d'un coup : vise le groupe, pas un seul.",pos:"Ne gaspille pas {E} pour attraper quelqu'un loin : c'est ton seul outil de défense."},
+  Seraphine:{esc:"{W} te donne de la vitesse et un bouclier : lance-le dès que tu vois deux ennemis arriver, pas quand tu es déjà touché.",worth:"Si ils sont alignés, {R} traverse les champions et charme tout le groupe. Avec {E} en plus, tu peux immobiliser les trois.",pos:"Joue à la portée max de tes sorts : Séraphine n'a aucun déplacement."},
+  Brand:{esc:"Aucun déplacement : ton seul outil, c'est {Q} qui étourdit un ennemi déjà en feu. Touche d'abord avec {W} ou {E}.",worth:"Quand plusieurs ennemis sont collés sur toi, c'est le meilleur moment pour {R} : il rebondit entre eux. Lance-le avant de mourir, sur le plus proche.",pos:"Reste derrière : Brand ne doit jamais être le premier visible."},
+  Shaco:{esc:"{Q} te rend invisible et te téléporte : utilise-le pour passer à travers un mur ou dans un buisson, puis change de direction. {R} te rend inciblable une demi-seconde : il esquive un gros sort.",worth:"Pose tes boîtes ({W}) dans les passages étroits : elles font fuir ceux qui te suivent.",pos:"Pose une boîte dans le buisson où tu attends : elle te prévient si quelqu'un arrive."},
+  Bard:{esc:"{E} crée un portail à travers un mur : c'est ta meilleure fuite, même à 3 contre 1. Prépare-le avant d'aller poser des balises.",worth:"{R} fige tout dans la zone, y compris les ennemis sur toi : lance-le pour gagner 2,5 secondes le temps que ton équipe arrive, ou fige-toi toi-même pour attendre un allié.",pos:"Quand tu ramasses tes carillons dans la jungle adverse, garde toujours {E} disponible."},
+  Sylas:{esc:"{E} te fait dasher : garde le premier saut pour fuir au lieu d'engager avec.",worth:"{W} te soigne beaucoup quand tu es bas : lance-le sur le plus fragile au dernier moment. Pense à voler le meilleur ultime de leur équipe avec {R}.",pos:"N'engage que si ton {E} et ton {W} sont tous les deux disponibles."},
+  Rell:{eng:1,esc:"Rell n'a pas de vraie fuite : lie-toi à un allié avec {E} pour avoir plus de résistance, et recule avant que le combat commence.",worth:"À plusieurs sur toi, lance {R} : il attire tout le monde autour. Ton équipe peut alors frapper tout le groupe d'un coup.",pos:"N'engage avec {W} que si au moins deux alliés peuvent suivre dans la seconde."},
+  Neeko:{esc:"{W} te rend invisible et envoie un clone qui part dans une autre direction : utilise-le dès qu'ils arrivent, ils suivront souvent le clone.",worth:"Si ils sont groupés sur toi, saute au milieu avec {R} : il étourdit tout le monde autour.",pos:"Déguise-toi en allié avec ton passif pour passer sans être vu."},
+  Camille:{esc:"{E} s'accroche aux murs : reste près d'un mur pour toujours avoir une sortie.",worth:"{R} enferme une seule cible avec toi : choisis le carry, les autres ne peuvent pas entrer.",pos:"Ne te bats pas en plein milieu de la rivière : sans mur, tu n'as pas de {E}."},
+  Anivia:{esc:"{W} pose un mur : mets-le entre toi et eux pour couper leur chemin.",worth:"Ton œuf te fait revivre : meurs près de ta tour ou de tes alliés, pas seul, sinon l'œuf est cassé tout de suite.",pos:"Anivia n'a pas de déplacement : ton mur est ta seule fuite, ne le gaspille pas pour attaquer."},
+  Poppy:{eng:1,esc:"{W} bloque les dashs ennemis autour de toi : lance-le quand ils sautent sur toi.",worth:"{R} chargé renvoie les ennemis très loin : éjecte celui qui t'engage ou les trois s'ils sont alignés.",pos:"Pousse les ennemis contre un mur avec {E} seulement si ton équipe est proche."},
+  RenataGlasc:{esc:"{E} te protège et peut immobiliser ceux qui te suivent.",worth:"À plusieurs sur toi, lance {R} : les ennemis touchés se tapent entre eux. C'est l'ultime parfait quand ils sont groupés.",pos:"Garde {W} pour sauver ton tireur, il peut revenir à la vie s'il fait un kill."},
+  Ezreal:{esc:"{E} te téléporte : garde-le pour fuir, pas pour attaquer.",worth:"Lance ton {R} sur le groupe ou sur la cible la plus basse avant de mourir.",pos:"Ezreal doit rester à la portée max de son {Q}."},
+  Leblanc:{esc:"{W} te fait dasher et revenir : reviens au point de départ quand ils te suivent.",worth:"Combo sur la cible la plus fragile avant de mourir : un kill fait de ta mort un échange.",pos:"N'utilise pas {W} pour engager si tu n'as pas de quoi fuir après."},
+  Karma:{esc:"{E} te donne un bouclier et de la vitesse : avec {R} avant, il protège et accélère tous tes alliés autour.",worth:"Ralentis ceux qui te suivent avec {Q} pendant que ton équipe arrive.",pos:"Joue à côté de ton tireur pour partager ton bouclier."},
+  Braum:{eng:1,esc:"{W} te fait sauter vers un allié : saute vers celui qui est le plus loin des ennemis.",worth:"{E} bloque les projectiles : mets-toi devant ton tireur. {R} soulève toute une ligne : lance-le sur le groupe qui te court après.",pos:"Ton rôle est de protéger ton tireur : reste entre lui et les ennemis, pas devant tout le monde."},
+  Viktor:{esc:"Pose {W} entre toi et eux : ils sont ralentis puis étourdis s'ils restent dedans.",worth:"Lance {R} au milieu de leur groupe quand ils sont sur toi : il les frappe pendant plusieurs secondes.",pos:"Pas de déplacement : reste derrière ton équipe."},
+  Hwei:{esc:"Tes sorts de contrôle (série {E}) peuvent faire peur ou immobiliser ceux qui arrivent : garde-en un pour te défendre.",worth:"Lance {R} sur le groupe : il ralentit et fait des dégâts en zone.",pos:"Hwei n'a pas de déplacement : joue derrière tes alliés."},
+  Aurora:{esc:"{W} te fait sauter et te rend invisible un court instant : change de direction pendant l'invisibilité.",worth:"{R} crée une zone d'où les ennemis ne sortent pas facilement : lance-le quand ils sont groupés.",pos:"Garde {W} pour fuir plutôt que pour engager."},
+  Morgana:{esc:"{E} te protège de tous les contrôles : lance-le sur toi quand ils arrivent, ils ne pourront pas t'immobiliser.",worth:"{R} enchaîne et étourdit tout le monde autour : à plusieurs sur toi, c'est l'ultime parfait (avec {E} sur toi pour tenir).",pos:"Garde {Q} pour le premier qui t'engage."},
+  Nidalee:{esc:"En cougar, {W} saute par-dessus les murs : reste près d'un mur pour toujours avoir une sortie.",worth:"Soigne-toi avec {E} avant le combat.",pos:"Nidalee support est fragile : harcèle de loin, ne reste pas au contact."},
+  Zyra:{esc:"Pas de déplacement : immobilise le premier qui arrive avec {E}, tes plantes le frapperont.",worth:"{R} soulève tout le groupe : lance-le quand ils sont sur toi.",pos:"Pose des graines dans les buissons proches pour voir arriver les ennemis."},
+  Lulu:{esc:"{W} transforme le premier qui plonge en petit animal : il ne peut plus rien faire.",worth:"Lance {R} sur toi quand ils sont sur toi : tu gagnes de la vie et les ennemis autour sont projetés en l'air.",pos:"Garde {W} pour celui qui engage, pas pour attaquer."},
+  Janna:{esc:"{Q} projette en l'air ceux qui arrivent, {E} te protège.",worth:"À plusieurs sur toi, {R} repousse tout le monde loin et soigne : c'est la meilleure sortie de Janna.",pos:"Reste à côté de ton tireur pour le protéger avec {E}."},
+  Ahri:{esc:"{R} te donne trois dashs : garde-les pour fuir quand tu es en danger.",worth:"Charme le premier qui arrive avec {E}.",pos:"N'utilise pas tous tes dashs pour engager."},
+  Pyke:{esc:"{W} te rend camouflé et rapide : change de chemin pendant le camouflage, puis {E} pour traverser.",worth:"{R} exécute les ennemis bas : chaque kill te remet l'ultime, cherche un enchaînement.",pos:"Pyke est fragile : engage seulement quand ton tireur peut suivre."},
+  Elise:{esc:"En araignée, {E} te rend inciblable pendant un court moment : ça esquive presque tout.",worth:"En humaine, {E} étourdit le premier qui arrive.",pos:"Garde le saut d'araignée pour fuir."},
+  Shen:{eng:1,esc:"{E} te fait dasher en provoquant ceux que tu touches.",worth:"Provoque le groupe avec {E}, puis {W} bloque les attaques de base autour de toi.",pos:"Garde {R} pour sauver un allié n'importe où sur la carte."},
+  Mel:{esc:"{W} renvoie les projectiles ennemis : lance-le au moment où le sort arrive.",worth:"{E} immobilise le premier qui arrive, puis vise le plus bas avec {R}.",pos:"Joue derrière ton tireur."},
+  Gragas:{eng:1,esc:"{E} te fait charger : sers-t'en pour fuir à travers un mur fin.",worth:"{R} repousse les ennemis : envoie-les vers ton équipe ou éloigne-les de ton tireur.",pos:"Engage seulement si ton équipe peut suivre ta charge."},
+  Qiyana:{esc:"{W} te fait dasher vers un mur, une herbe ou de l'eau : reste près d'un élément.",worth:"{R} contre un mur étourdit tout le groupe.",pos:"Ne te bats pas loin des murs."},
+  Thresh:{eng:1,esc:"Ta lanterne ({W}) peut aussi ramener un allié : jette-la avant d'engager.",worth:"{E} repousse ceux qui arrivent, {R} ralentit toute la zone autour.",pos:"N'engage avec {Q} que si ton tireur peut suivre."},
+  Leona:{eng:1,esc:"Leona n'a pas de vraie fuite : {W} te rend très résistante quelques secondes, utilise-le pour tenir.",worth:"{R} étourdit le centre de la zone : vise le groupe.",pos:"N'engage avec {E} que si ton tireur peut suivre."},
+  Nautilus:{eng:1,esc:"{Q} sur un mur te tire jusqu'à lui : c'est une fuite.",worth:"{R} vise le carry, il projette aussi ceux qui sont sur le chemin.",pos:"N'engage que si ton tireur peut suivre."},
+  Blitzcrank:{eng:1,esc:"{W} te donne une grosse vitesse : sers-t'en pour fuir.",worth:"{R} coupe les sorts des ennemis autour : à plusieurs sur toi, ça les empêche de te tuer avec leurs sorts.",pos:"Ne lance pas {Q} quand le jungler adverse n'est pas visible."},
+  Alistar:{eng:1,esc:"{Q} projette en l'air tout le monde autour : ça arrête ceux qui te poursuivent.",worth:"{R} réduit énormément les dégâts que tu prends : lance-le au début, pas quand tu es déjà bas.",pos:"N'engage avec {W} et {Q} que si ton équipe peut suivre."},
+  Nami:{esc:"{Q} immobilise le premier qui arrive.",worth:"{R} soulève toute une ligne : lance-le sur le groupe.",pos:"Reste derrière ton tireur."},
+  Soraka:{esc:"{E} empêche les sorts et immobilise : pose-le sous toi quand ils arrivent.",worth:"Garde {R} pour soigner toute ton équipe quand le combat commence.",pos:"Soraka est très fragile : reste derrière tout le monde."},
+  Milio:{esc:"{E} te donne un bouclier et de la vitesse.",worth:"{R} retire les contrôles et soigne tes alliés autour.",pos:"Reste derrière ton tireur."},
+  Yuumi:{esc:"Reste collée sur un allié : tu ne peux mourir que si tu descends.",worth:"{R} immobilise ceux qui sont touchés plusieurs fois.",pos:"Change d'allié avec {W} au lieu de descendre."},
+  Taric:{eng:1,esc:"Garde {W} lié à un allié pour avoir de l'armure.",worth:"{R} rend ton équipe autour invincible après un court délai : lance-le dès que le combat commence.",pos:"Reste collé à ton tireur."},
+  Senna:{esc:"{E} te rend camouflée avec tes alliés proches : sers-t'en pour fuir.",worth:"{W} immobilise le premier qui arrive.",pos:"Senna est fragile : reste derrière."},
+  Velkoz:{esc:"Pas de déplacement : {E} projette en l'air le premier qui arrive.",worth:"{R} vise le groupe qui te court après.",pos:"Reste à portée max."},
+  Xerath:{esc:"Pas de déplacement : {E} étourdit le premier qui arrive.",worth:"Lance {W} sur le groupe avant de mourir.",pos:"Reste à portée max."},
+  Swain:{esc:"{W} et {E} gardent les ennemis à distance.",worth:"{R} te soigne en drainant les ennemis autour : à plusieurs sur toi, il est encore plus fort.",pos:"Engage seulement si tu peux tenir avec {R}."},
+  Pantheon:{eng:1,esc:"{E} bloque les dégâts venant de face.",worth:"{W} étourdit une cible : vise le carry.",pos:"Pantheon est fort tôt : joue agressif avant 15 minutes, prudent ensuite."},
+  Zilean:{esc:"{E} te ralentit l'ennemi ou t'accélère.",worth:"{R} ramène à la vie : garde-le pour ton tireur ou pour toi.",pos:"Reste derrière ton équipe."},
+  Maokai:{eng:1,esc:"{Q} repousse ceux qui sont autour de toi.",worth:"{R} immobilise tous ceux qui sont touchés : lance-le sur le groupe.",pos:"Pose tes pousses ({E}) dans les buissons pour voir arriver les ennemis."}
+};
+const CLASSKIT={
+  mage:{esc:"Ton sort de contrôle est ta seule défense : garde-le pour le premier qui t'engage, puis Saut éclair.",worth:"Si tu ne peux pas fuir, vide tous tes sorts sur la cible la plus fragile : si elle meurt ou utilise ses sorts d'invocateur, ta mort coûte quelque chose.",pos:"Un mage sans déplacement joue à sa portée maximale, derrière ses alliés."},
+  ench:{esc:"Ton bouclier ou ta vitesse se lance dès que tu vois deux ennemis arriver, pas quand tu es déjà touché.",worth:"Si tu ne peux pas fuir, mets ton bouclier ou ton soin sur l'allié qui peut encore gagner le combat.",pos:"Reste collé à ton tireur."},
+  tank:{eng:1,esc:"Un tank fuit rarement : utilise tes contrôles pour ralentir ceux qui te suivent.",worth:"À plusieurs sur toi, c'est ton rôle : encaisse et contrôle le plus possible pendant que ton équipe frappe.",pos:"N'engage que si au moins deux alliés peuvent suivre."},
+  blade:{esc:"Garde ton déplacement pour fuir plutôt que pour engager.",worth:"Vise la cible la plus fragile : un kill fait de ta mort un échange.",pos:"N'entre dans un combat qu'avec ton déplacement disponible."},
+  bow:{esc:"Garde ton déplacement ou Saut éclair pour le premier qui t'engage.",worth:"Frappe ce qui est à portée sans avancer : un tireur vivant fait plus de dégâts qu'un tireur qui court après un kill.",pos:"Reste derrière ton tank et ton support."}
+};
+function kitFor(g){
+  const k=g.champKey||"", base=KIT[k]||CLASSKIT[champClass(g.champion)]||CLASSKIT.mage;
+  const names=SPELLS[k]||[], slot={Q:0,W:1,E:2,R:3}, generic={Q:"ton A",W:"ton Z",E:"ton E",R:"ton ultime"};
+  const fill=s=>s.replace(/\{([QWER])\}/g,(_,l)=>names[slot[l]]?`« ${names[slot[l]]} »`:generic[l]);
+  return {eng:!!base.eng,esc:fill(base.esc),worth:fill(base.worth),pos:fill(base.pos)};
+}
 function adviseDeath(d,g){
   const P=[d.x,d.y], team=g.team||100, min=d.t/60, z=zoneOf(d.x,d.y,team);
   const near=(arr,r)=>(arr||[]).filter(a=>dist([a[2],a[3]],P)<r);
   const allies=near(d.al,2600), enemiesNear=near(d.en,2600);
-  const nEnemy=(d.by||[]).length+enemiesNear.length, nAlly=allies.length+1;
-  const killer=(d.by&&d.by[0])?d.by[0][0]:null;
+  const by=d.by||[], nBy=by.length, nEnemy=nBy+enemiesNear.length, nAlly=allies.length+1;
+  const killer=by[0]?by[0][0]:null, names=by.map(b=>b[0]).join(" + ");
   const blue=team===100, enemyHalf=blue?d.x+d.y>15600:d.x+d.y<14200;
-  const why=[], todo=[];
-  let title;
-  if(d.tower&&!killer){title="Tué par une tour ou un monstre";todo.push("Ne plonge pas sous une tour adverse sans qu'un allié prenne les tirs à ta place.")}
-  if(nEnemy>=nAlly+2){title=title||`Combat à ${nAlly} contre ${nEnemy}`;why.push(`${nEnemy} ennemis autour de toi, seulement ${nAlly-1} allié${nAlly-1>1?"s":""} assez près pour aider.`);todo.push("Recule vers tes alliés dès que plusieurs ennemis apparaissent : un combat en infériorité est presque toujours perdu.")}
-  else if(nEnemy>nAlly&&(d.by||[]).length>=2){title=title||`Combat à ${nAlly} contre ${nEnemy}`;why.push(`${(d.by||[]).map(b=>b[0]).join(" et ")} se sont mis à ${nEnemy} sur toi${nAlly===1?", sans allié à côté":""}.`);
-    todo.push(g.role==="Support"||g.role==="ADC"?"En lane du bas, ne reste pas seul face aux deux adversaires : recule sous ta tour quand ton partenaire n'est pas à côté de toi.":"Quand tu vois deux ennemis arriver, recule vers ta tour : un 1 contre 2 se perd presque toujours.")}
-  if(allies.length===0&&enemyHalf){title=title||`Seul dans ${z}`;why.push(`Aucun allié à moins de 2 600 unités, dans ${z}.`);todo.push("Dans le camp adverse sans allié, recule : avance seulement avec un coéquipier ou là où tu as posé une balise.")}
-  if((z==="la rivière"||z==="la jungle adverse")&&min<20&&allies.length===0){title=title||`Attrapé dans ${z}`;why.push(`À ${mmssD(d.t)}, le jungler adverse rôde souvent dans ce coin.`);todo.push("Pose une balise avant d'entrer dans la rivière, ou passe par ta propre jungle.")}
-  if(d.lvl&&d.klvl&&d.klvl-d.lvl>=2){title=title||`${killer} avait ${d.klvl-d.lvl} niveaux d'avance`;why.push(`Toi niveau ${d.lvl}, ${killer} niveau ${d.klvl}.`);todo.push("Évite les duels quand tu as 2 niveaux de retard : farme en sécurité et attends ton équipe.")}
-  if(d.gold>=1300){why.push(`Tu avais ${d.gold} PO non dépensées sur toi.`);todo.push(`Retourne à la base acheter avant de te battre : ${d.gold} PO, c'est presque un objet entier.`);title=title||`${d.gold} PO non dépensées`}
-  if(min>=25&&allies.length<=1){title=title||"Mort isolée en fin de partie";why.push("Après 25 minutes, chaque mort dure longtemps.");todo.push("En fin de partie, reste groupé : une mort seule offre le Nashor ou un inhibiteur à l'équipe adverse.")}
-  if(!title&&killer&&(d.by||[]).length===1){title=`Duel perdu contre ${killer}`;todo.push(`Avant d'engager ${killer}, vérifie son niveau, sa vie et ses sorts d'invocateur.`)}
-  if(!title){title=killer?`Tué par ${killer}`:"Mort";todo.push("Garde un œil sur la mini-carte : les ennemis qui disparaissent viennent souvent vers toi.")}
-  why.unshift(`À ${mmssD(d.t)}, dans ${z}${killer?`, tué par ${(d.by||[]).map(b=>b[0]).join(" + ")}`:""}.`);
-  // où il aurait dû aller
-  let target=null,label="Recule ici";
-  const base=FOUNTAIN[team], dB=dist(P,base);
-  const group=(d.al||[]).filter(a=>dist([a[2],a[3]],P)<6000);
-  if(group.length>=2){const c=[group.reduce((s,a)=>s+a[2],0)/group.length,group.reduce((s,a)=>s+a[3],0)/group.length];
-    if(dist(c,base)<dB-500){target=c;label="Rejoins ton équipe"}}
-  if(!target&&dB>3200){const t=(TOWERS[team]||[]).filter(t=>dist(t,base)<dB-800).sort((a,b)=>dist(a,P)-dist(b,P))[0];if(t)target=t}
-  if(target&&dist(target,P)>4500)target=nearPoint(P,target,4500);
-  return {title,why:why.slice(0,4),todo:[...new Set(todo)].slice(0,3),target,label};
+  const K=kitFor(g), sup=g.role==="Support", ctx="ak" in d;
+  const objUs=(d.obj||[]).filter(o=>o[1]), objThem=(d.obj||[]).filter(o=>!o[1]);
+  const objTxt=a=>[...new Set(a.map(o=>o[0]))].join(" et ");
+  const why=[], todo=[]; let showWard=false, title, good=false, ward=null, paths=[], target=null, label="Recule ici";
+  // d'où venaient-ils ? (position 20 s avant)
+  const came=(d.from||[]).map((f,i)=>f&&by[i]?{n:by[i][0],f,dd:dist(f,P)}:null).filter(Boolean);
+  const far=came.filter(c=>c.dd>3000).sort((a,b)=>b.dd-a.dd);
+  for(const c of came)if(c.dd>1500)paths.push(c.f);
+  if(far.length){const f=far[0].f, k=Math.min(0.6,Math.max(0.35,2200/far[0].dd));ward=[P[0]+(f[0]-P[0])*k,P[1]+(f[1]-P[1])*k]}
+
+  if(d.tower&&!killer){
+    title="Tué par une tour ou un monstre";
+    todo.push("Une plongée sous la tour se fait seulement quand tes sbires sont sous la tour ou qu'un allié prend les tirs avant toi.");
+  } else if(ctx&&nBy>=2&&((d.ak||0)>=Math.max(1,nBy-1)||(objUs.length&&!objThem.length&&nEnemy>=3))){
+    // mort utile : un échange
+    good=true;
+    title=(d.ak||0)>=nBy?`Échange gagné : ${d.ak} kill${d.ak>1?"s":""} pour ta mort`:`Mort utile : ${nEnemy} ennemis sur toi`;
+    if(d.ak)why.push(`Ton équipe a tué ${d.ak} ennemi${d.ak>1?"s":""} dans le même combat.`);
+    if(objUs.length)why.push(`Pendant qu'ils étaient sur toi, ton équipe a pris : ${objTxt(objUs)}.`);
+    todo.push(`Ce n'est pas une erreur : ${nEnemy} ennemis occupés sur toi, c'est l'avantage pour ton équipe ailleurs.`);
+    todo.push(`Pour en tirer encore plus : ${K.worth}`);
+  } else if(nEnemy>=3&&nEnemy>=nAlly+2&&allies.length===0){
+    // attrapé seul à plusieurs : l'erreur est avant
+    title=`Attrapé seul par ${nEnemy} ennemis`; showWard=far.length>0;
+    if(far.length)why.push(`${far.map(c=>c.n).join(" et ")} ${far.length>1?"arrivaient":"arrivait"} de ${zoneOf(far[0].f[0],far[0].f[1],team)} : ${far.length>1?"ils étaient":"il était"} à plus de ${Math.round(far[0].dd/100)*100} unités 20 secondes avant.`);
+    if(objThem.length)why.push(`Ta mort leur a ouvert : ${objTxt(objThem)} dans la minute.`);
+    todo.push(far.length?`Le problème se joue 15 secondes avant : la balise jaune sur la carte est sur le chemin de ${far[0].n}. Posée là, elle te montrait ${far.length>1?"le groupe":"son arrivée"} à temps pour partir.`:`Le problème se joue avant : à ${nEnemy} contre toi, c'est qu'au moins 3 ennemis étaient invisibles sur la mini-carte. Quand 3 ennemis manquent, ne va pas dans ${z} sans balise ou sans ton jungler.`);
+    if(objThem.length&&sup)todo.push(`Avant un ${objThem[0][0]}, pose tes balises 1 minute avant qu'il apparaisse, avec ton jungler ou ton mid à côté, jamais seul quand le combat est imminent.`);
+    else todo.push(`Pour t'en sortir sur le moment : ${K.esc}`);
+    todo.push(`Si c'est trop tard pour fuir : ${K.worth}`);
+  } else if(nEnemy>=nAlly+2||(nEnemy>=3&&nEnemy>nAlly)||nBy>=3){
+    // combat d'équipe perdu en infériorité, ou ciblé par toute leur équipe
+    title=nEnemy>nAlly?`Combat perdu à ${nAlly} contre ${nEnemy}`:`Ciblé par ${nBy} ennemis en plein combat`;
+    why.push(`${nEnemy} ennemis autour de toi, ${nAlly-1} allié${nAlly-1>1?"s":""} assez près.`);
+    if(d.ek)why.push(`${d.ek} allié${d.ek>1?"s sont morts":" est mort"} dans le même combat.`);
+    if(objThem.length)why.push(`L'équipe adverse a pris ensuite : ${objTxt(objThem)}.`);
+    if(K.eng)todo.push(`C'est toi qui engages : avant de lancer ton engagement, compte. Si moins de ${Math.max(2,nEnemy-1)} alliés peuvent te suivre dans la seconde, attends ou vise une cible isolée.`);
+    else todo.push(`Dans un combat à ${nAlly} contre ${nEnemy}, ton rôle n'est pas de gagner seul : ${K.pos}`);
+    todo.push(`Sur le moment : ${K.esc}`);
+    todo.push(`Si tu ne peux plus fuir : ${K.worth}`);
+  } else if(nEnemy>nAlly&&nBy>=2){
+    title=`Pris à ${nEnemy} contre ${nAlly}`; showWard=far.length>0;
+    why.push(`${names} se sont mis à ${nEnemy} sur toi${nAlly===1?", sans allié à côté":""}.`);
+    if(far.length)why.push(`${far[0].n} arrivait de ${zoneOf(far[0].f[0],far[0].f[1],team)}.`);
+    todo.push(far.length?`${far[0].n} arrivait de loin : la balise jaune sur la carte l'aurait montré une dizaine de secondes avant.`:(sup?"En lane du bas, quand ton tireur recule, recule avec lui : seul face aux deux, tu n'as pas le temps de réagir.":"Quand un deuxième ennemi apparaît, recule tout de suite vers ta tour."));
+    todo.push(`Sur le moment : ${K.esc}`);
+  } else if(nBy>=2&&nEnemy===nAlly){
+    title=`${nAlly} contre ${nEnemy} perdu`;
+    why.push(`Combat égal en nombre contre ${names}.`);
+    if(d.lvl&&d.klvl&&d.klvl!==d.lvl)why.push(`Toi niveau ${d.lvl}, ${killer} niveau ${d.klvl}.`);
+    todo.push(min<8?"À égalité en nombre, c'est le premier niveau qui gagne : regarde la barre d'XP. Échange juste après être passé niveau 2, 3 ou 6 avant eux, recule quand ce sont eux.":"À égalité en nombre, regarde les sorts d'invocateur et les ultimes avant d'engager : s'ils ont leur Saut éclair et pas vous, n'y va pas.");
+    todo.push(K.eng?`Tu engages : ${K.pos}`:`Sur le moment : ${K.esc}`);
+  } else if(d.lvl&&d.klvl&&d.klvl-d.lvl>=2){
+    title=`${killer} avait ${d.klvl-d.lvl} niveaux d'avance`;
+    why.push(`Toi niveau ${d.lvl}, ${killer} niveau ${d.klvl}.`);
+    todo.push(`Avec ${d.klvl-d.lvl} niveaux de retard, ${killer} gagne presque tous les échanges : joue près de ta tour jusqu'à ce que ton jungler soit là.`);
+    todo.push(`Sur le moment : ${K.esc}`);
+  } else if(killer&&nBy===1){
+    title=`Duel perdu contre ${killer}`;
+    todo.push(`Avant d'échanger avec ${killer}, regarde si ses sorts d'invocateur sont disponibles (Saut éclair, Embrasement) : sans eux, tu as souvent l'avantage.`);
+    todo.push(`Sur le moment : ${K.esc}`);
+  }
+  if(d.gold>=1300){why.push(`Tu avais ${d.gold} PO non dépensées sur toi.`);todo.unshift(`Retourne à la base avant ce combat : ${d.gold} PO, c'est presque un objet entier de puissance en plus.`);title=title||`${d.gold} PO non dépensées`}
+  if(!title&&min>=25&&allies.length<=1){title="Mort isolée en fin de partie";todo.push("Après 25 minutes, une mort seule offre le Nashor ou un inhibiteur : ne pose plus de balise seul dans la jungle adverse, fais-le avec un allié.")}
+  if(!title){title=killer?`Tué par ${killer}`:"Mort";todo.push(`Sur le moment : ${K.esc}`)}
+  why.unshift(`À ${mmssD(d.t)}, dans ${z}${killer?`, tué par ${names}`:""}.`);
+  // flèche de sortie : seulement quand il y avait vraiment une sortie
+  if(!good&&!(nEnemy>=3&&allies.length===0&&showWard)){
+    const base=FOUNTAIN[team], dB=dist(P,base);
+    if(dB>3200){const t=(TOWERS[team]||[]).filter(t=>dist(t,base)<dB-800).sort((a,b)=>dist(a,P)-dist(b,P))[0];if(t){target=dist(t,P)>4500?nearPoint(P,t,4500):t;label="Ta sortie"}}
+  }
+  if(!showWard){ward=null;paths=[]}
+  return {title,good,why:why.slice(0,4),todo:[...new Set(todo)].slice(0,3),target,label,ward,paths};
 }
 const champImg=k=>DDV&&k?`https://ddragon.leagueoflegends.com/cdn/${DDV}/img/champion/${encodeURIComponent(k)}.png`:"";
 let svgUid=0;
@@ -860,6 +980,7 @@ function deathSVG(d,g,adv){
   // cadrage : la mort, ses tueurs et l'endroit où il aurait dû aller doivent tous être visibles
   const pts=[[d.x,d.y],...(d.by||[]).map(b=>nearPoint([d.x,d.y],[b[2],b[3]],1700))];
   if(adv.target)pts.push(adv.target,[adv.target[0],adv.target[1]-1000]);
+  if(adv.ward)pts.push(adv.ward,[adv.ward[0],adv.ward[1]-900]);
   const xs=pts.map(p=>p[0]),ys=pts.map(p=>Y(p[1]));
   const W=Math.min(MAPW,Math.max(6400,Math.max(...xs)-Math.min(...xs)+3200,Math.max(...ys)-Math.min(...ys)+3200));
   const mx=(Math.max(...xs)+Math.min(...xs))/2, my=(Math.max(...ys)+Math.min(...ys))/2;
@@ -882,6 +1003,13 @@ function deathSVG(d,g,adv){
     const sx=q[0],sy=Y(q[1]),ex=P[0]+(q[0]-P[0])*0.32,ey=Y(P[1]+(q[1]-P[1])*0.32);
     s+=`<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="#ff5a5a" stroke-width="95" stroke-linecap="round" marker-end="url(#${id}r)"/>`;
     s+=icon(b[1],sx,sy,270,"enemy",`${b[0]} (${i?"assistance":"tueur"})`)});
+  // d'où ils venaient : traits pointillés rouges
+  for(const f of adv.paths||[])s+=`<line x1="${f[0]}" y1="${Y(f[1])}" x2="${P[0]}" y2="${Y(P[1])}" stroke="#ff8a8a" stroke-width="45" stroke-dasharray="120 140" opacity=".75"/>`;
+  // balise qui l'aurait prévenu
+  if(adv.ward){const [wx,wy]=adv.ward, yy=Y(wy);
+    s+=`<g class="ward"><circle cx="${wx}" cy="${yy}" r="330" class="wglow"/><path d="M${wx} ${yy-260}l170 300h-340z" class="wbody"/><circle cx="${wx}" cy="${yy+10}" r="80" class="weye"/></g>`;
+    const lab="Balise ici", lw=lab.length*175+500, lx=Math.max(cx-W/2+lw/2+100,Math.min(cx+W/2-lw/2-100,wx)), ly=Math.max(cy-W/2+100,yy-950);
+    s+=`<g class="lbl wl"><rect x="${lx-lw/2}" y="${ly}" width="${lw}" height="520" rx="260"/><text x="${lx}" y="${ly+360}" text-anchor="middle">${lab}</text></g>`}
   // où aller : flèche verte
   if(adv.target){const [tx,ty]=adv.target;
     s+=`<line x1="${P[0]}" y1="${Y(P[1])}" x2="${tx}" y2="${Y(ty)}" stroke="#3fe0a0" stroke-width="85" stroke-dasharray="220 150" stroke-linecap="round" marker-end="url(#${id}g)"/>`;
@@ -899,7 +1027,7 @@ function deathsBlock(g){
   return `<div class="deaths"><div class="rnote" style="margin-bottom:2px">Ses ${g.deaths.length} mort${g.deaths.length>1?"s":""} sur la carte · positions des autres joueurs approximatives (relevées chaque minute)</div>
     <div class="dgrid">${g.deaths.map((d,i)=>{const a=adviseDeath(d,g);return `<figure class="dcard">${deathSVG(d,g,a)}<figcaption>
       <b>${i+1}. ${esc(a.title)}</b><ul class="rl">${a.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
-      <div class="dtodo"><span>Il aurait fallu</span>${a.todo.map(t=>`<p>${esc(t)}</p>`).join("")}</div></figcaption></figure>`}).join("")}</div></div>`;
+      <div class="dtodo${a.good?" ok":""}"><span>${a.good?"Bien joué":"À retenir"}</span>${a.todo.map(t=>`<p>${esc(t)}</p>`).join("")}</div></figcaption></figure>`}).join("")}</div></div>`;
 }
 /* carte de toutes les morts d'un champion */
 function hasMapGames(name){return GAMES.some(g=>norm(g.champion)===norm(name)&&g.mode==="Faille"&&!g.short)}
@@ -1264,6 +1392,7 @@ function laneBilan(gs){
     } else {
       DDV=prof.ddragon||null;
       for(const g of prof.games||[])if(g.champKey)NAME2KEY[g.champion]=g.champKey;
+      if(!window.__spellsLoaded){window.__spellsLoaded=true;try{SPELLS=await fetchJSON("data/spells.json")}catch(e){}}
       if(DDV&&!window.__champsLoaded){window.__champsLoaded=true;try{const cj=await fetch(`https://ddragon.leagueoflegends.com/cdn/${DDV}/data/fr_FR/champion.json`).then(r=>r.json());for(const c of Object.values(cj.data))NAME2KEY[c.name]=c.id}catch(e){}}
       allGames=(prof.games||[]).map(g=>{const a=analyseGame(g);return {...g,strengths:a.S,weaknesses:a.W,tips:a.T}});
     }
